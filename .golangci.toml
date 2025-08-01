@@ -1,0 +1,153 @@
+version = 2
+
+[formatters]
+enable = [
+  "gci",
+  "gofmt",
+  "gofumpt",
+  "goimports",
+  "golines",
+]
+
+[formatters.settings]
+gofumpt.extra-rules = true
+golines.reformat-tags = true
+
+[linters]
+default = "all"
+disable = [
+  "cyclop",
+  "decorder",
+  "depguard",
+  "err113",
+  "exhaustive",
+  "exhaustruct",
+  "forbidigo",
+  "gochecknoglobals",
+  "grouper",
+  "ireturn",
+  "mnd",
+  "nonamedreturns",
+  "prealloc",
+  "varnamelen",
+  "wsl",
+]
+
+[linters.settings]
+copyloopvar.check-alias = true
+fatcontext.check-struct-pointers = true
+gochecksumtype.include-shared-interfaces = true
+gocognit.min-complexity = 15
+gocritic.enable-all = true
+godot.godot.scope = "all"
+gosec.excludes = [ "G103", "G115" ]
+iface.enable = [ "identical", "opaque" ]
+importas.no-extra-aliases = true
+perfsprint.err-error = true
+predeclared.qualified-name = true
+promlinter.strict = true
+staticcheck.checks = [ "all", "-S1021", "-ST1003" ]
+tagliatelle.use-field-name = true
+unconvert.fast-math = true
+
+[linters.settings.decorder]
+disable-dec-num-check = false
+disable-dec-order-check = false
+disable-init-func-first-check = false
+disable-type-dec-num-check = true
+
+[linters.settings.errcheck]
+check-blank = true
+check-type-assertions = true
+
+[linters.settings.errchkjson]
+check-error-free-encoding = true
+report-no-exported = true
+
+[linters.settings.forbidigo]
+analyze-types = true
+exclude-godoc-examples = false
+
+[linters.settings.goconst]
+eval-const-expressions = true
+ignore-calls = false
+min-occurrences = 5
+numbers = true
+
+[linters.settings.gocritic.settings]
+captLocal.paramsOnly = false
+elseif.skipbalanced = false
+truncateCmp.skipArchDependent = false
+underef.skipRecvDeref = false
+unnamedResult.checkExported = true
+
+[linters.settings.govet]
+enable-all = true
+shadow.strict = true
+disable = [ "fieldalignment" ]
+
+[linters.settings.nolintlint]
+allow-unused = false
+require-explanation = true
+require-specific = true
+
+[linters.settings.prealloc]
+simple = false
+range-loops = true
+for-loops = true
+
+[linters.settings.revive]
+enable-all-rules = true
+confidence = 0
+
+[[linters.settings.revive.rules]]
+name = "cyclomatic"
+disabled = true
+
+[[linters.settings.revive.rules]]
+name = "line-length-limit"
+disabled = true
+
+[[linters.settings.revive.rules]]
+name = "deep-exit"
+disabled = true
+
+[[linters.settings.revive.rules]]
+name = "var-naming"
+disabled = true
+
+[[linters.settings.revive.rules]]
+name = "add-constant"
+disabled = true
+
+[[linters.settings.revive.rules]]
+name = "max-public-structs"
+disabled = true
+
+[linters.settings.testifylint]
+enable-all = true
+require-f-funcs = true
+require-string-msg = true
+
+[linters.settings.usestdlibvars]
+time-month = true
+time-layout = true
+crypto-hash = true
+default-rpc-path = true
+sql-isolation-level = true
+tls-signature-scheme = true
+constant-kind = true
+
+[linters.settings.usetesting]
+os-temp-dir = true
+context-background = true
+context-todo = true
+
+[linters.settings.varnamelen]
+check-receiver = true
+check-return = true
+check-type-param = true
+
+[linters.settings.whitespace]
+multi-if = true
+ignore-names = "ok"
