@@ -787,7 +787,7 @@ func EVIOCREVOKE() uint {
 	return IOW('E', 0x91, int32(0))
 }
 
-// EVIOCGMASK returns the ioctl request code to retrieve the per-clienta
+// EVIOCGMASK returns the ioctl request code to retrieve the per-client
 // event mask for a specified event type.
 //
 // From [input.h]:

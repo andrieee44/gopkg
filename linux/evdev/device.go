@@ -546,6 +546,30 @@ func (dev *Device) Release(release int32) error {
 	)
 }
 
+// SetEventMask configures which input events the device will report by
+// applying the given event mask. The mask is a bitmask of event types and
+// codes defined in [uapi.InputMask].
+func (dev *Device) SetEventMask(mask uapi.InputMask) error {
+	return ioctlSetAny(
+		dev.Fd(),
+		uapi.EVIOCSMASK(),
+		&mask,
+		"failed to set evdev device event mask",
+	)
+}
+
+// SetClockID sets the clock source used by the kernel when timestamping
+// events read from the device. The clockID must be one of the standard
+// clock constants.
+func (dev *Device) SetClockID(clockID int32) error {
+	return ioctlSetAny(
+		dev.Fd(),
+		uapi.EVIOCSCLOCKID(),
+		&clockID,
+		"failed to set evdev device clock id",
+	)
+}
+
 // Close closes the evdev device by closing its underlying file handle.
 func (dev *Device) Close() error {
 	var err error
