@@ -1,4 +1,4 @@
-package uapi
+package evdev
 
 import "fmt"
 

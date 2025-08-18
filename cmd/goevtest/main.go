@@ -114,7 +114,6 @@ func printAbsInfo(absInfo uapi.InputAbsInfo, values []int32) {
       Resolution %8d
 `, absInfo.Minimum, absInfo.Maximum, absInfo.Fuzz, absInfo.Flat,
 		absInfo.Resolution)
-
 }
 
 func printAbs(dev *evdev.Device) {

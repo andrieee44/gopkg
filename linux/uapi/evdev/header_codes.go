@@ -1,84 +1,87 @@
-package uapi
+package evdev
 
 const (
-	// INPUT_PROP_POINTER indicates that the device needs a pointer.
+	// INPUT_PROP_POINTER marks the device as requiring on‑screen
+	// cursor control. Typical for mice, trackpads, or other
+	// pointing devices.
 	INPUT_PROP_POINTER InputPropCode = 0x00
 
-	// INPUT_PROP_DIRECT indicates that the device is a direct input device.
+	// INPUT_PROP_DIRECT marks the device as “direct input” where
+	// touch/movement maps 1:1 to display coordinates (e.g. a
+	// touchscreen).
 	INPUT_PROP_DIRECT InputPropCode = 0x01
 
-	// INPUT_PROP_BUTTONPAD indicates that the device has buttons under
-	// the pad.
+	// INPUT_PROP_BUTTONPAD means the touchpad has integrated
+	// clickable buttons beneath its surface instead of separate
+	// physical ones.
 	INPUT_PROP_BUTTONPAD InputPropCode = 0x02
 
-	// INPUT_PROP_SEMI_MT indicates that the device reports a single
-	// rectangular touch area.
+	// INPUT_PROP_SEMI_MT identifies devices that report a single
+	// bounding box for multiple touches, not individual contact
+	// positions. Seen in some older multi‑touch hardware.
 	INPUT_PROP_SEMI_MT InputPropCode = 0x03
 
-	// INPUT_PROP_TOPBUTTONPAD indicates that the device places soft buttons
-	// at the top of the pad.
+	// INPUT_PROP_TOPBUTTONPAD signals that virtual/soft buttons
+	// are located along the top edge of the touchpad surface.
 	INPUT_PROP_TOPBUTTONPAD InputPropCode = 0x04
 
-	// INPUT_PROP_POINTING_STICK indicates that the device is a pointing
-	// stick.
+	// INPUT_PROP_POINTING_STICK indicates a pointing stick —
+	// the small joystick‑like nub often in laptop keyboards.
 	INPUT_PROP_POINTING_STICK InputPropCode = 0x05
 
-	// INPUT_PROP_ACCELEROMETER indicates that the device has an
-	// accelerometer.
+	// INPUT_PROP_ACCELEROMETER means the device has an internal
+	// accelerometer for motion/orientation sensing.
 	INPUT_PROP_ACCELEROMETER InputPropCode = 0x06
 
-	// INPUT_PROP_MAX is the highest input property code.
+	// INPUT_PROP_MAX is the highest valid input property code.
 	INPUT_PROP_MAX InputPropCode = 0x1f
 
-	// INPUT_PROP_CNT is the count of input properties.
+	// INPUT_PROP_CNT is the total number of input properties.
 	INPUT_PROP_CNT InputPropCode = INPUT_PROP_MAX + 1
 
-	// EV_SYN is the event type for synchronization.
-	// Synchronization events signal boundaries between batches of events.
+	// EV_SYN marks a synchronization event, used to signal
+	// boundaries between groups of related events.
 	EV_SYN InputEventCode = 0x00
 
-	// EV_KEY is the event type for keys and buttons.
-	// Reports key/button press and release.
+	// EV_KEY covers key/button events: press/release actions
+	// for keyboards, mice, and game controllers.
 	EV_KEY InputEventCode = 0x01
 
-	// EV_REL is the event type for relative axis movements.
-	// Reports changes in position, e.g., mouse or wheel motion.
+	// EV_REL indicates relative movement (position deltas),
+	// such as mouse motion or scroll wheel steps.
 	EV_REL InputEventCode = 0x02
 
-	// EV_ABS is the event type for absolute axis values.
-	// Reports exact device coordinates, e.g., touchscreens or joysticks.
+	// EV_ABS reports absolute position values, e.g. touchscreen
+	// coordinates or joystick axes.
 	EV_ABS InputEventCode = 0x03
 
-	// EV_MSC is the event type for miscellaneous events.
-	// Device-specific information not covered by other types.
+	// EV_MSC carries miscellaneous data that does not fit into
+	// other event types, such as scancodes.
 	EV_MSC InputEventCode = 0x04
 
-	// EV_SW is the event type for switch events.
-	// Reports binary state changes, e.g., lid open/close.
+	// EV_SW covers binary hardware switches, such as lid open/
+	// closed or tablet mode toggles.
 	EV_SW InputEventCode = 0x05
 
-	// EV_LED is the event type for LED indicators.
-	// Controls device LEDs, e.g., keyboard caps-lock light.
+	// EV_LED controls device‑attached LEDs, like Caps Lock or
+	// Num Lock indicators.
 	EV_LED InputEventCode = 0x11
 
-	// EV_SND is the event type for sound events.
-	// Triggers device-embedded sound generators.
+	// EV_SND triggers sounds from the device itself, e.g. system
+	// beeps.
 	EV_SND InputEventCode = 0x12
 
-	// EV_REP is the event type for auto-repeat settings.
-	// Adjusts keyboard repeat rates and delays.
+	// EV_REP adjusts key repeat delays and rates for held keys.
 	EV_REP InputEventCode = 0x14
 
-	// EV_FF is the event type for force-feedback effects.
-	// Starts, stops, or updates rumble/vibration motors.
+	// EV_FF controls force‑feedback effects such as rumble.
 	EV_FF InputEventCode = 0x15
 
-	// EV_PWR is the event type for power management.
-	// Reports power state changes, e.g., battery warnings.
+	// EV_PWR signals power management events (e.g. power button).
 	EV_PWR InputEventCode = 0x16
 
-	// EV_FF_STATUS is the event type for force-feedback status.
-	// Reports effect completion or playback errors.
+	// EV_FF_STATUS reports feedback effect status, completion,
+	// or errors.
 	EV_FF_STATUS InputEventCode = 0x17
 
 	// EV_MAX is the highest defined event type code.
@@ -87,25 +90,29 @@ const (
 	// EV_CNT is the total number of event types.
 	EV_CNT InputEventCode = EV_MAX + 1
 
-	// SYN_REPORT marks the end of a batch of input events.
+	// SYN_REPORT marks the end of a batch of events, making all
+	// changes visible to user space.
 	SYN_REPORT InputSyncCode = 0
 
 	// SYN_CONFIG signals a change in device configuration.
 	SYN_CONFIG InputSyncCode = 1
 
-	// SYN_MT_REPORT reports an update to the multi-touch state.
+	// SYN_MT_REPORT groups data for a single touch contact in a
+	// multi‑touch stream.
 	SYN_MT_REPORT InputSyncCode = 2
 
-	// SYN_DROPPED indicates that one or more input events were dropped.
+	// SYN_DROPPED warns that one or more events were lost; user
+	// space should re‑sync.
 	SYN_DROPPED InputSyncCode = 3
 
 	// SYN_MAX is the highest synchronization event code.
 	SYN_MAX InputSyncCode = 0x0f
 
-	// SYN_CNT is the total number of synchronization events.
+	// SYN_CNT is the total number of synchronization event codes.
 	SYN_CNT InputSyncCode = SYN_MAX + 1
 
-	// KEY_RESERVED is reserved (no key).
+	// KEY_RESERVED is reserved and should not be assigned to any
+	// physical key.
 	KEY_RESERVED InputKeyCode = 0
 
 	// KEY_ESC is the Escape key.
@@ -360,7 +367,7 @@ const (
 	// KEY_ZENKAKUHANKAKU is the Zenkaku/Hankaku key.
 	KEY_ZENKAKUHANKAKU InputKeyCode = 85
 
-	// KEY_102ND is the ISO 102nd key.
+	// KEY_102ND is the ISO 102nd keyboard key.
 	KEY_102ND InputKeyCode = 86
 
 	// KEY_F11 is the F11 function key.
@@ -369,7 +376,7 @@ const (
 	// KEY_F12 is the F12 function key.
 	KEY_F12 InputKeyCode = 88
 
-	// KEY_RO is the RO key (Japanese keyboard).
+	// KEY_RO is the RO key on Japanese keyboards.
 	KEY_RO InputKeyCode = 89
 
 	// KEY_KATAKANA is the Katakana key.
@@ -384,7 +391,7 @@ const (
 	// KEY_KATAKANAHIRAGANA toggles between Katakana and Hiragana.
 	KEY_KATAKANAHIRAGANA InputKeyCode = 93
 
-	// KEY_MUHENKAN is the Muhenkan (non-conversion) key.
+	// KEY_MUHENKAN is the Muhenkan (non‑conversion) key.
 	KEY_MUHENKAN InputKeyCode = 94
 
 	// KEY_KPJPCOMMA is the keypad Japanese comma key.
@@ -468,13 +475,13 @@ const (
 	// KEY_KPCOMMA is the keypad comma key.
 	KEY_KPCOMMA InputKeyCode = 121
 
-	// KEY_HANGEUL is the Hangeul key (Korean).
+	// KEY_HANGEUL is the Hangeul key on Korean keyboards.
 	KEY_HANGEUL InputKeyCode = 122
 
 	// KEY_HANGUEL is an alias for KEY_HANGEUL.
 	KEY_HANGUEL InputKeyCode = KEY_HANGEUL
 
-	// KEY_HANJA is the Hanja key (Korean).
+	// KEY_HANJA is the Hanja key on Korean keyboards.
 	KEY_HANJA InputKeyCode = 123
 
 	// KEY_YEN is the Yen currency key.
@@ -567,8 +574,7 @@ const (
 	// KEY_SCREENLOCK is an alias for KEY_COFFEE.
 	KEY_SCREENLOCK InputKeyCode = KEY_COFFEE
 
-	// KEY_ROTATE_DISPLAY is the Application Control Display Orientation
-	// key.
+	// KEY_ROTATE_DISPLAY is the Application Control Display Orientation key.
 	KEY_ROTATE_DISPLAY InputKeyCode = 153
 
 	// KEY_DIRECTION is an alias for KEY_ROTATE_DISPLAY.
@@ -710,8 +716,8 @@ const (
 	// KEY_PROG4 is the Program 4 key.
 	KEY_PROG4 InputKeyCode = 203
 
-	// KEY_ALL_APPLICATIONS is the Application Control Desktop Show
-	// All Applications key.
+	// KEY_ALL_APPLICATIONS is the Application Control Desktop Show All
+	// Applications key.
 	KEY_ALL_APPLICATIONS InputKeyCode = 204
 
 	// KEY_DASHBOARD is an alias for KEY_ALL_APPLICATIONS.
@@ -833,36 +839,35 @@ const (
 	KEY_VIDEO_PREV InputKeyCode = 242
 
 	// KEY_BRIGHTNESS_CYCLE is the Brightness Cycle key; brightness
-	// increases and wraps to minimum after the maximum.
+	// increases and wraps to minimum after reaching the maximum.
 	KEY_BRIGHTNESS_CYCLE InputKeyCode = 243
 
-	// KEY_BRIGHTNESS_AUTO sets auto brightness; manual brightness control
-	// is off and relies on ambient light.
+	// KEY_BRIGHTNESS_AUTO sets auto brightness; manual control is disabled
+	// and relies on ambient light sensors.
 	KEY_BRIGHTNESS_AUTO InputKeyCode = 244
 
 	// KEY_BRIGHTNESS_ZERO is an alias for KEY_BRIGHTNESS_AUTO.
 	KEY_BRIGHTNESS_ZERO InputKeyCode = KEY_BRIGHTNESS_AUTO
 
-	// KEY_DISPLAY_OFF sets the display device to off state.
+	// KEY_DISPLAY_OFF sets the display device to an off state.
 	KEY_DISPLAY_OFF InputKeyCode = 245
 
 	// KEY_WWAN is the Wireless WAN key (LTE, UMTS, GSM, etc.).
 	KEY_WWAN InputKeyCode = 246
 
-	// KEY_WIMAX is an alias for the KEY_WWAN.
+	// KEY_WIMAX is an alias for KEY_WWAN.
 	KEY_WIMAX InputKeyCode = KEY_WWAN
 
-	// KEY_RFKILL is the key that controls all radios
-	// (WiFi, Bluetooth, etc.).
+	// KEY_RFKILL is the master radio control key (WiFi, Bluetooth, etc.).
 	KEY_RFKILL InputKeyCode = 247
 
-	// KEY_MICMUTE toggles microphone mute/unmute.
+	// KEY_MICMUTE toggles microphone mute and unmute.
 	KEY_MICMUTE InputKeyCode = 248
 
 	// BTN_MISC marks the start of miscellaneous button codes.
 	BTN_MISC InputKeyCode = 0x100
 
-	// BTN_0 is an alias for BTN_MISC, representing the first
+	// BTN_0 is an alias for BTN_MISC representing the first
 	// miscellaneous button.
 	BTN_0 InputKeyCode = 0x100
 
@@ -959,7 +964,7 @@ const (
 	// BTN_BASE6 is the sixth base button on a joystick.
 	BTN_BASE6 InputKeyCode = 0x12b
 
-	// BTN_DEAD is reserved (no assigned button).
+	// BTN_DEAD is reserved and unassigned.
 	BTN_DEAD InputKeyCode = 0x12f
 
 	// BTN_GAMEPAD is the first gamepad button code.

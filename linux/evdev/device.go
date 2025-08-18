@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 	"unsafe"
 
-	"github.com/andrieee44/gopkg/lib/bits"
-	"github.com/andrieee44/gopkg/linux/uapi"
-	"golang.org/x/sys/unix"
+	"github.com/andrieee44/gopkg/linux/uapi/evdev"
+	"github.com/andrieee44/gopkg/linux/uapi/ioctl"
 )
 
 var (
@@ -30,7 +28,7 @@ type Device struct {
 	file *os.File
 }
 
-// NewDevice opens the evdev device at the given path and returns a Device.
+// NewDevice opens the evdev device at the given path and returns a [Device].
 // The device file is opened in read-write mode. The caller is responsible
 // for closing the device when no longer needed.
 func NewDevice(path string) (*Device, error) {
@@ -53,7 +51,7 @@ func NewDevice(path string) (*Device, error) {
 }
 
 // Devices enumerates /dev/input/event* for event devices, opens each one,
-// and returns a slice of Device pointers. If any device fails to open,
+// and returns a slice of [Device] pointers. If any device fails to open,
 // an error is returned and no devices are returned.
 func Devices() ([]*Device, error) {
 	var (
@@ -89,20 +87,20 @@ func (dev *Device) Fd() uintptr {
 
 // Version returns the evdev device's driver version.
 func (dev *Device) Version() (int32, error) {
-	return ioctlGetAny(
+	return getAny(
 		dev.Fd(),
-		uapi.EVIOCGVERSION(),
+		evdev.EVIOCGVERSION,
 		new(int32),
 		"failed to get event device driver version",
 	)
 }
 
 // ID returns the evdev device’s identifier.
-func (dev *Device) ID() (uapi.InputID, error) {
-	return ioctlGetAny(
+func (dev *Device) ID() (evdev.InputID, error) {
+	return getAny(
 		dev.Fd(),
-		uapi.EVIOCGID(),
-		new(uapi.InputID),
+		evdev.EVIOCGID,
+		new(evdev.InputID),
 		"failed to get event device ID",
 	)
 }
@@ -112,9 +110,9 @@ func (dev *Device) ID() (uapi.InputID, error) {
 // uint32[0] = Delay before key repeat starts.
 // uint32[1] = Period between repeats when a key is held.
 func (dev *Device) Repeat() ([2]uint32, error) {
-	return ioctlGetAny(
+	return getAny(
 		dev.Fd(),
-		uapi.EVIOCGREP(),
+		evdev.EVIOCGREP,
 		new([2]uint32),
 		"failed to get repeat settings of evdev device",
 	)
@@ -125,9 +123,9 @@ func (dev *Device) Repeat() ([2]uint32, error) {
 // uint32[0] = Delay before key repeat starts.
 // uint32[1] = Period between repeats when a key is held.
 func (dev *Device) SetRepeat(settings [2]uint32) error {
-	return ioctlSetAny(
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCSREP(),
+		evdev.EVIOCSREP,
 		&settings,
 		"failed to set repeat settings of evdev device",
 	)
@@ -138,9 +136,9 @@ func (dev *Device) SetRepeat(settings [2]uint32) error {
 // uint32[0] = Scancode to look up.
 // uint32[1] = Populated keycode for the given scancode.
 func (dev *Device) Scancode(codes [2]uint32) ([2]uint32, error) {
-	return ioctlGetAny(
+	return getAny(
 		dev.Fd(),
-		uapi.EVIOCGKEYCODE(),
+		evdev.EVIOCGKEYCODE,
 		&codes,
 		"failed to get keycode of evdev device",
 	)
@@ -150,10 +148,10 @@ func (dev *Device) Scancode(codes [2]uint32) ([2]uint32, error) {
 // evdev device. The keymap parameter specifies the input index to query
 // in its Index field and is updated with the retrieved keycode in its
 // Keycode field.
-func (dev *Device) ScancodeV2(keymap uapi.InputKeymapEntry) (uapi.InputKeymapEntry, error) {
-	return ioctlGetAny(
+func (dev *Device) ScancodeV2(keymap evdev.InputKeymapEntry) (evdev.InputKeymapEntry, error) {
+	return getAny(
 		dev.Fd(),
-		uapi.EVIOCGKEYCODE_V2(),
+		evdev.EVIOCGKEYCODE_V2,
 		&keymap,
 		"failed to get keycodeV2 of evdev device",
 	)
@@ -164,9 +162,9 @@ func (dev *Device) ScancodeV2(keymap uapi.InputKeymapEntry) (uapi.InputKeymapEnt
 // uint32[0] = Scancode to map.
 // uint32[1] = Keycode to assign to that scancode.
 func (dev *Device) SetScancode(codes [2]uint32) error {
-	return ioctlSetAny(
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCSKEYCODE(),
+		evdev.EVIOCSKEYCODE,
 		&codes,
 		"failed to set keycode of evdev device",
 	)
@@ -175,75 +173,76 @@ func (dev *Device) SetScancode(codes [2]uint32) error {
 // SetScancodeV2 sets the keycode for a given keymap entry on the evdev
 // device. The keymap parameter specifies the input index to map in its
 // Index field and carries the keycode to assign in its Keycode field.
-func (dev *Device) SetScancodeV2(keymap uapi.InputKeymapEntry) error {
-	return ioctlSetAny(
+func (dev *Device) SetScancodeV2(keymap evdev.InputKeymapEntry) error {
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCSKEYCODE_V2(),
+		evdev.EVIOCSKEYCODE_V2,
 		&keymap,
 		"failed to set index keycodeV2 of evdev device",
 	)
 }
 
-// Name returns the evdev device’s name.
-func (dev *Device) Name() (string, error) {
-	return ioctlGetStr(
+// Name returns the device’s name as a string.
+// bufSize specifies the maximum number of bytes to read. If unsure,
+// use 256.
+func (dev *Device) Name(bufSize uint32) (string, error) {
+	return getStr(
 		dev.Fd(),
-		uapi.EVIOCGNAME,
+		evdev.EVIOCGNAME,
+		bufSize,
 		"failed to get evdev device name",
 	)
 }
 
-// PhysicalLocation returns the evdev device’s physical location.
-// evdev.
-func (dev *Device) PhysicalLocation() (string, error) {
-	return ioctlGetStr(
+// PhysicalLocation returns the device’s physical location as a string.
+// bufSize specifies the maximum number of bytes to read. If unsure,
+// use 256.
+func (dev *Device) PhysicalLocation(bufSize uint32) (string, error) {
+	return getStr(
 		dev.Fd(),
-		uapi.EVIOCGPHYS,
+		evdev.EVIOCGPHYS,
+		bufSize,
 		"failed to get evdev device physical location",
 	)
 }
 
-// UniqueID returns the evdev device’s unique identifier.
-func (dev *Device) UniqueID() (string, error) {
-	return ioctlGetStr(
+// UniqueID returns the device’s unique identifier as a string.
+// bufSize specifies the maximum number of bytes to read. If unsure,
+// use 256.
+func (dev *Device) UniqueID(bufSize uint32) (string, error) {
+	return getStr(
 		dev.Fd(),
-		uapi.EVIOCGUNIQ,
+		evdev.EVIOCGUNIQ,
+		bufSize,
 		"failed to get evdev device unique id",
 	)
 }
 
 // Properties returns the evdev device's input properties.
-func (dev *Device) Properties() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) Properties() ([]evdev.InputPropCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		uapi.EVIOCGPROP,
-		uapi.INPUT_PROP_CNT,
+		evdev.EVIOCGPROP,
+		evdev.INPUT_PROP_CNT,
 		"failed to get evdev device properties",
 	)
 }
 
 // MTSlots retrieves the current multitouch slot values for a given
-// [uapi.ABS_MT_SLOT] code.
-func (dev *Device) MTSlots(code uapi.InputCoder) ([]int32, error) {
+// [evdev.ABS_MT_SLOT] code.
+func (dev *Device) MTSlots(abs evdev.InputAbsoluteCode) ([]int32, error) {
 	var (
-		abs     uapi.InputAbsoluteCode
-		absInfo uapi.InputAbsInfo
+		absInfo evdev.InputAbsInfo
 		length  uint
 		values  []int32
-		ok      bool
 		err     error
 	)
 
-	abs, ok = code.(uapi.InputAbsoluteCode)
-	if !ok {
-		return nil, fmt.Errorf("code %d (%s) is not an absolute code", code.Value(), code)
-	}
-
-	if !isMT(abs) {
+	if !evdev.IsMultiTouch(abs) {
 		return nil, fmt.Errorf("code %d (%s): %w", abs, abs, ErrNotMultitouch)
 	}
 
-	absInfo, err = dev.AbsInfo(uapi.ABS_MT_SLOT)
+	absInfo, err = dev.AbsInfo(evdev.ABS_MT_SLOT)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get evdev device multitouch slots: %w", err)
 	}
@@ -252,9 +251,9 @@ func (dev *Device) MTSlots(code uapi.InputCoder) ([]int32, error) {
 	values = make([]int32, length)
 	values[0] = int32(abs)
 
-	_, err = ioctlGetAny(
+	_, err = getAny(
 		dev.Fd(),
-		uapi.EVIOCGMTSLOTS(length*uint(unsafe.Sizeof(int32(0)))),
+		evdev.EVIOCGMTSLOTS(length*uint(unsafe.Sizeof(int32(0)))),
 		&values[0],
 		"failed to get evdev device multitouch slots",
 	)
@@ -266,73 +265,70 @@ func (dev *Device) MTSlots(code uapi.InputCoder) ([]int32, error) {
 }
 
 // EnabledKeycodes returns the evdev device's enabled key codes.
-func (dev *Device) EnabledKeycodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) EnabledKeycodes() ([]evdev.InputKeyCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		uapi.EVIOCGKEY,
-		uapi.KEY_CNT,
+		evdev.EVIOCGKEY,
+		evdev.KEY_CNT,
 		"failed to get evdev device enabled keycodes",
 	)
 }
 
 // EnabledLEDs returns the evdev device's enabled LED codes.
-func (dev *Device) EnabledLEDs() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) EnabledLEDs() ([]evdev.InputLEDCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		uapi.EVIOCGLED,
-		uapi.LED_CNT,
+		evdev.EVIOCGLED,
+		evdev.LED_CNT,
 		"failed to get evdev device enabled LEDs",
 	)
 }
 
 // EnabledSounds returns the evdev device's enabled sound codes.
-func (dev *Device) EnabledSounds() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) EnabledSounds() ([]evdev.InputSoundCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		uapi.EVIOCGSND,
-		uapi.SND_CNT,
+		evdev.EVIOCGSND,
+		evdev.SND_CNT,
 		"failed to get evdev device enabled sounds",
 	)
 }
 
 // EnabledSwitches returns the evdev device's enabled switch codes.
-func (dev *Device) EnabledSwitches() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) EnabledSwitches() ([]evdev.InputSwitchCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		uapi.EVIOCGSW,
-		uapi.SW_CNT,
+		evdev.EVIOCGSW,
+		evdev.SW_CNT,
 		"failed to get evdev device enabled switches",
 	)
 }
 
-// Codes returns the list of [uapi.InputCoder] values supported by this
-// device for the given [uapi.InputEventCode]. It dispatches to the
-// appropriate helper method based on the event type.
-func (dev *Device) Codes(event uapi.InputEventCode) ([]uapi.InputCoder, error) {
+func (dev *Device) Codes(event evdev.InputEventCode) ([]evdev.InputCoder, error) {
 	switch event {
-	case uapi.EV_SYN:
+	case evdev.EV_SYN:
 		return dev.SyncCodes()
-	case uapi.EV_KEY:
+	case evdev.EV_KEY:
 		return dev.Keycodes()
-	case uapi.EV_REL:
+	case evdev.EV_REL:
 		return dev.RelativeCodes()
-	case uapi.EV_ABS:
+	case evdev.EV_ABS:
 		return dev.AbsoluteCodes()
-	case uapi.EV_MSC:
+	case evdev.EV_MSC:
 		return dev.MiscCodes()
-	case uapi.EV_SW:
+	case evdev.EV_SW:
 		return dev.SwitchCodes()
-	case uapi.EV_LED:
+	case evdev.EV_LED:
 		return dev.LEDCodes()
-	case uapi.EV_SND:
+	case evdev.EV_SND:
 		return dev.SoundCodes()
-	case uapi.EV_REP:
+	case evdev.EV_REP:
 		return dev.RepeatCodes()
-	case uapi.EV_FF:
+	case evdev.EV_FF:
 		return dev.FFCodes()
-	case uapi.EV_PWR:
+	case evdev.EV_PWR:
 		return dev.PowerCodes()
-	case uapi.EV_FF_STATUS:
+	case evdev.EV_FF_STATUS:
 		return dev.FFStatusCodes()
 	default:
 		return nil, fmt.Errorf("event %d (%s): %w", event, event, ErrUnsupportedEvent)
@@ -340,97 +336,97 @@ func (dev *Device) Codes(event uapi.InputEventCode) ([]uapi.InputCoder, error) {
 }
 
 // EventCodes returns the evdev device's supported event codes.
-func (dev *Device) EventCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) EventCodes() ([]evdev.InputEventCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(0),
-		uapi.EV_CNT,
+		evdev.BitmaskReq(0),
+		evdev.EV_CNT,
 		"failed to get evdev device supported event codes",
 	)
 }
 
 // SyncCodes returns the evdev device's supported sync codes.
-func (dev *Device) SyncCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) SyncCodes() ([]evdev.InputSyncCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_SYN),
-		uapi.SYN_CNT,
+		evdev.BitmaskReq(evdev.EV_SYN),
+		evdev.SYN_CNT,
 		"failed to get evdev device supported sync codes",
 	)
 }
 
 // Keycodes returns the evdev device's supported keycodes.
-func (dev *Device) Keycodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) Keycodes() ([]evdev.InputKeyCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_KEY),
-		uapi.KEY_CNT,
+		evdev.BitmaskReq(evdev.EV_KEY),
+		evdev.KEY_CNT,
 		"failed to get evdev device supported keycodes",
 	)
 }
 
 // RelativeCodes returns the evdev device's supported relative codes.
-func (dev *Device) RelativeCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) RelativeCodes() ([]evdev.InputRelativeCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_REL),
-		uapi.REL_CNT,
+		evdev.BitmaskReq(evdev.EV_REL),
+		evdev.REL_CNT,
 		"failed to get evdev device supported relative codes",
 	)
 }
 
 // AbsoluteCodes returns the evdev device's supported absolute codes.
-func (dev *Device) AbsoluteCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) AbsoluteCodes() ([]evdev.InputAbsoluteCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_ABS),
-		uapi.ABS_CNT,
+		evdev.BitmaskReq(evdev.EV_ABS),
+		evdev.ABS_CNT,
 		"failed to get evdev device supported absolute codes",
 	)
 }
 
 // MiscCodes returns the evdev device's supported misc codes.
-func (dev *Device) MiscCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) MiscCodes() ([]evdev.InputMiscCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_MSC),
-		uapi.MSC_CNT,
+		evdev.BitmaskReq(evdev.EV_MSC),
+		evdev.MSC_CNT,
 		"failed to get evdev device supported misc codes",
 	)
 }
 
 // SwitchCodes returns the evdev device's supported switch codes.
-func (dev *Device) SwitchCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) SwitchCodes() ([]evdev.InputSwitchCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_SW),
-		uapi.SW_CNT,
+		evdev.BitmaskReq(evdev.EV_SW),
+		evdev.SW_CNT,
 		"failed to get evdev device supported switch codes",
 	)
 }
 
 // LEDCodes returns the evdev device's supported LED codes.
-func (dev *Device) LEDCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) LEDCodes() ([]evdev.InputLEDCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_LED),
-		uapi.LED_CNT,
+		evdev.BitmaskReq(evdev.EV_LED),
+		evdev.LED_CNT,
 		"failed to get evdev device supported LED codes",
 	)
 }
 
 // SoundCodes returns the evdev device's supported sound codes.
-func (dev *Device) SoundCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) SoundCodes() ([]evdev.InputSoundCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_SND),
-		uapi.SND_CNT,
+		evdev.BitmaskReq(evdev.EV_SND),
+		evdev.SND_CNT,
 		"failed to get evdev device supported sound codes",
 	)
 }
 
 // RepeatCodes returns the evdev device's supported repeat codes.
-func (dev *Device) RepeatCodes() ([]uapi.InputCoder, error) {
+func (dev *Device) RepeatCodes() ([]evdev.InputRepeatCode, error) {
 	var err error
 
 	_, err = dev.Repeat()
@@ -438,67 +434,74 @@ func (dev *Device) RepeatCodes() ([]uapi.InputCoder, error) {
 		return nil, fmt.Errorf("failed to get evdev device supported repeat codes: %w", err)
 	}
 
-	return []uapi.InputCoder{uapi.REP_DELAY, uapi.REP_PERIOD}, nil
+	return []evdev.InputRepeatCode{
+		evdev.REP_DELAY,
+		evdev.REP_PERIOD,
+	}, nil
 }
 
 // FFCodes returns the evdev device's supported force-feedback codes.
-func (dev *Device) FFCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) FFCodes() ([]evdev.InputFFCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_FF),
-		uapi.FF_CNT,
+		evdev.BitmaskReq(evdev.EV_FF),
+		evdev.FF_CNT,
 		"failed to get evdev device supported force-feedback codes",
 	)
 }
 
 // PowerCodes returns the evdev device's supported power codes.
-func (dev *Device) PowerCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) PowerCodes() ([]evdev.InputKeyCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_PWR),
-		uapi.KEY_CNT,
+		evdev.BitmaskReq(evdev.EV_PWR),
+		evdev.KEY_CNT,
 		"failed to get evdev device supported power codes",
 	)
 }
 
 // FFStatusCodes returns the evdev device's supported force-feedback status
 // codes.
-func (dev *Device) FFStatusCodes() ([]uapi.InputCoder, error) {
-	return ioctlGetBitmask(
+func (dev *Device) FFStatusCodes() ([]evdev.InputFFStatusCode, error) {
+	return getBitmask(
 		dev.Fd(),
-		bitmaskReq(uapi.EV_FF_STATUS),
-		uapi.FF_STATUS_MAX,
+		evdev.BitmaskReq(evdev.EV_FF_STATUS),
+		evdev.FF_STATUS_MAX,
 		"failed to get evdev device supported force-feedback status codes",
 	)
 }
 
 // AbsInfo returns the evdev device's absolute axis information
-// corresponding to the provided [uapi.InputAbsoluteCode].
-func (dev *Device) AbsInfo(code uapi.InputCoder) (uapi.InputAbsInfo, error) {
-	return ioctlGetAny(
+// corresponding to the provided [evdev.InputAbsoluteCode].
+func (dev *Device) AbsInfo(abs evdev.InputAbsoluteCode) (evdev.InputAbsInfo, error) {
+	return getAny(
 		dev.Fd(),
-		uapi.EVIOCGABS(uint(code.Value())),
-		new(uapi.InputAbsInfo),
+		func() (uint32, error) {
+			return evdev.EVIOCGABS(abs)
+		},
+		new(evdev.InputAbsInfo),
 		"failed to get evdev device absolute axis info",
 	)
 }
 
 // SetAbsInfo sets the evdev device's absolute axis information
-// corresponding to the provided [uapi.InputAbsoluteCode].
-func (dev *Device) SetAbsInfo(abs uapi.InputAbsoluteCode, absInfo uapi.InputAbsInfo) error {
-	return ioctlSetAny(
+// corresponding to the provided [evdev.InputAbsoluteCode].
+func (dev *Device) SetAbsInfo(abs evdev.InputAbsoluteCode, absInfo evdev.InputAbsInfo) error {
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCGABS(uint(abs)),
+		func() (uint32, error) {
+			return evdev.EVIOCSABS(abs)
+		},
 		&absInfo,
-		"failed to get evdev device absolute axis info",
+		"failed to set evdev device absolute axis info",
 	)
 }
 
 // SendFF sends a force-feedback effect to the evdev device.
-func (dev *Device) SendFF(effect uapi.FFEffect) error {
-	return ioctlSetAny(
+func (dev *Device) SendFF(effect evdev.FFEffect) error {
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCSFF(),
+		evdev.EVIOCSFF,
 		&effect,
 		"failed to send evdev device force-feedback",
 	)
@@ -506,9 +509,9 @@ func (dev *Device) SendFF(effect uapi.FFEffect) error {
 
 // RemoveFF removes a force-feedback effect of the evdev device.
 func (dev *Device) RemoveFF(id int32) error {
-	return ioctlSetAny(
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCRMFF(),
+		evdev.EVIOCRMFF,
 		&id,
 		"failed to remove evdev device force-feedback",
 	)
@@ -516,9 +519,9 @@ func (dev *Device) RemoveFF(id int32) error {
 
 // FFEffects returns the amount of force-feedback effects of the evdev device.
 func (dev *Device) FFEffects() (int32, error) {
-	return ioctlGetAny(
+	return getAny(
 		dev.Fd(),
-		uapi.EVIOCGEFFECTS(),
+		evdev.EVIOCGEFFECTS,
 		new(int32),
 		"failed to get evdev device force-feedback effects",
 	)
@@ -527,9 +530,9 @@ func (dev *Device) FFEffects() (int32, error) {
 // Grab toggles exclusive access to the evdev device.
 // Pass 1 to grab, 0 to release.
 func (dev *Device) Grab(grab int32) error {
-	return ioctlSetAny(
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCGRAB(),
+		evdev.EVIOCGRAB,
 		&grab,
 		"failed to grab/release evdev device",
 	)
@@ -538,9 +541,9 @@ func (dev *Device) Grab(grab int32) error {
 // Release toggles exclusive access to the evdev device.
 // Pass 1 to release, 0 to grab.
 func (dev *Device) Release(release int32) error {
-	return ioctlSetAny(
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCREVOKE(),
+		evdev.EVIOCREVOKE,
 		&release,
 		"failed to release/grab evdev device",
 	)
@@ -548,11 +551,11 @@ func (dev *Device) Release(release int32) error {
 
 // SetEventMask configures which input events the device will report by
 // applying the given event mask. The mask is a bitmask of event types and
-// codes defined in [uapi.InputMask].
-func (dev *Device) SetEventMask(mask uapi.InputMask) error {
-	return ioctlSetAny(
+// codes defined in [evdev.InputMask].
+func (dev *Device) SetEventMask(mask evdev.InputMask) error {
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCSMASK(),
+		evdev.EVIOCSMASK,
 		&mask,
 		"failed to set evdev device event mask",
 	)
@@ -562,9 +565,9 @@ func (dev *Device) SetEventMask(mask uapi.InputMask) error {
 // events read from the device. The clockID must be one of the standard
 // clock constants.
 func (dev *Device) SetClockID(clockID int32) error {
-	return ioctlSetAny(
+	return setAny(
 		dev.Fd(),
-		uapi.EVIOCSCLOCKID(),
+		evdev.EVIOCSCLOCKID,
 		&clockID,
 		"failed to set evdev device clock id",
 	)
@@ -582,106 +585,77 @@ func (dev *Device) Close() error {
 	return nil
 }
 
-func ioctlGetAny[T any](fd uintptr, req uint, arg *T, errMsg string) (T, error) {
-	var errno syscall.Errno
-
-	_, _, errno = unix.Syscall(
-		unix.SYS_IOCTL,
-		fd,
-		uintptr(req),
-		uintptr(unsafe.Pointer(arg)),
+// getAny wraps [ioctl.GetAny], prefixing any error with errMsg.
+func getAny[T any](
+	fd uintptr,
+	reqFn func() (uint32, error),
+	arg *T,
+	errMsg string,
+) (T, error) {
+	var (
+		result T
+		err    error
 	)
-	if errno != 0 {
-		return *new(T), fmt.Errorf("%s: failed ioctl syscall: %w", errMsg, errno)
+
+	result, err = ioctl.GetAny(fd, reqFn, arg)
+	if err != nil {
+		return *new(T), fmt.Errorf("%s: %w", errMsg, err)
 	}
 
-	return *arg, nil
+	return result, nil
 }
 
-func ioctlSetAny[T any](fd uintptr, req uint, arg *T, errMsg string) error {
+// setAny wraps [ioctl.GetAny], prefixing any error with errMsg.
+func setAny[T any](
+	fd uintptr,
+	reqFn func() (uint32, error),
+	arg *T,
+	errMsg string,
+) error {
 	var err error
 
-	_, err = ioctlGetAny(fd, req, arg, errMsg)
+	_, err = ioctl.GetAny(fd, reqFn, arg)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %w", errMsg, err)
 	}
 
 	return nil
 }
 
-func ioctlGetStr(fd uintptr, req func(uint) uint, errMsg string) (string, error) {
+func getStr(
+	fd uintptr,
+	reqFn func(length uint32) (uint32, error),
+	bufSize uint32,
+	errMsg string,
+) (string, error) {
 	var (
-		buf []byte
+		str string
 		err error
 	)
 
-	buf = make([]byte, 256)
-
-	_, err = ioctlGetAny(fd, req(256), &buf[0], errMsg)
+	str, err = ioctl.GetStr(fd, reqFn, bufSize)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: %w", errMsg, err)
 	}
 
-	return unix.ByteSliceToString(buf), nil
+	return str, nil
 }
 
-func ioctlGetBitmask[T uapi.InputCode](
+func getBitmask[T evdev.InputCode](
 	fd uintptr,
-	req func(uint) uint,
+	req func(length uint32) (uint32, error),
 	count T,
 	errMsg string,
-) ([]uapi.InputCoder, error) {
+) ([]T, error) {
 	var (
-		buf   []byte
-		codes []uapi.InputCoder
-		code  T
+		codes []T
 		err   error
 	)
 
-	buf = bits.Bytes(int(count))
-
-	_, err = ioctlGetAny(fd, req(uint(len(buf))), &buf[0], errMsg)
+	codes, err = evdev.GetBitmask(fd, req, count)
 	if err != nil {
-		return nil, err
-	}
-
-	codes = make([]uapi.InputCoder, 0, count)
-
-	for code = range count {
-		if !bits.Test(buf, int(code)) {
-			continue
-		}
-
-		codes = append(codes, uapi.InputCoder(code))
+		return nil, fmt.Errorf("%s: %w", errMsg, err)
 	}
 
 	return codes, nil
-}
-
-func bitmaskReq(event uapi.InputEventCode) func(uint) uint {
-	return func(length uint) uint {
-		return uapi.EVIOCGBIT(uint(event), length)
-	}
-}
-
-func isMT(abs uapi.InputAbsoluteCode) bool {
-	switch abs {
-	case uapi.ABS_MT_TOUCH_MAJOR,
-		uapi.ABS_MT_TOUCH_MINOR,
-		uapi.ABS_MT_WIDTH_MAJOR,
-		uapi.ABS_MT_WIDTH_MINOR,
-		uapi.ABS_MT_ORIENTATION,
-		uapi.ABS_MT_POSITION_X,
-		uapi.ABS_MT_POSITION_Y,
-		uapi.ABS_MT_TOOL_TYPE,
-		uapi.ABS_MT_BLOB_ID,
-		uapi.ABS_MT_TRACKING_ID,
-		uapi.ABS_MT_PRESSURE,
-		uapi.ABS_MT_DISTANCE,
-		uapi.ABS_MT_TOOL_X,
-		uapi.ABS_MT_TOOL_Y:
-		return true
-	default:
-		return false
-	}
 }
