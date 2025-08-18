@@ -82,3 +82,19 @@ func IsMultiTouch(abs InputAbsoluteCode) bool {
 		return false
 	}
 }
+
+// AsInputCoders converts a slice of type T to a slice of InputCoder.
+func AsInputCoders[T InputCode](codes []T) []InputCoder {
+	var (
+		coders []InputCoder
+		idx    int
+		value  T
+	)
+
+	coders = make([]InputCoder, len(codes))
+	for idx, value = range codes {
+		coders[idx] = InputCoder(value)
+	}
+
+	return coders
+}

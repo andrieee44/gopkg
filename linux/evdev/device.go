@@ -228,12 +228,12 @@ func (dev *Device) Properties() ([]evdev.InputPropCode, error) {
 	)
 }
 
-// MTSlots retrieves the current multitouch slot values for a given
+// MTSlotValues retrieves the current multitouch slot values for a given
 // [evdev.ABS_MT_SLOT] code.
-func (dev *Device) MTSlots(abs evdev.InputAbsoluteCode) ([]int32, error) {
+func (dev *Device) MTSlotValues(abs evdev.InputAbsoluteCode) ([]int32, error) {
 	var (
 		absInfo evdev.InputAbsInfo
-		length  uint
+		length  uint32
 		values  []int32
 		err     error
 	)
@@ -247,13 +247,15 @@ func (dev *Device) MTSlots(abs evdev.InputAbsoluteCode) ([]int32, error) {
 		return nil, fmt.Errorf("failed to get evdev device multitouch slots: %w", err)
 	}
 
-	length = uint(absInfo.Maximum + 2)
+	length = uint32(absInfo.Maximum) + 2
 	values = make([]int32, length)
 	values[0] = int32(abs)
 
 	_, err = getAny(
 		dev.Fd(),
-		evdev.EVIOCGMTSLOTS(length*uint(unsafe.Sizeof(int32(0)))),
+		func() (uint32, error) {
+			return evdev.EVIOCGMTSLOTS(length * uint32(unsafe.Sizeof(int32(0))))
+		},
 		&values[0],
 		"failed to get evdev device multitouch slots",
 	)
@@ -304,32 +306,40 @@ func (dev *Device) EnabledSwitches() ([]evdev.InputSwitchCode, error) {
 	)
 }
 
+// Codes returns the supported codes for the given
+// [evdev.InputEventCode] by dispatching to the matching *Codes
+// method and converting them to [evdev.InputCoder]. Errors from the
+// underlying call are returned unchanged; unknown events return
+// [ErrUnsupportedEvent]. Using Codes erases the concrete code type,
+// so callers lose compile‑time type safety; prefer specific methods
+// such as [Device.Keycodes] or [Device.RelativeCodes] when typed
+// codes are required.
 func (dev *Device) Codes(event evdev.InputEventCode) ([]evdev.InputCoder, error) {
 	switch event {
 	case evdev.EV_SYN:
-		return dev.SyncCodes()
+		return asInputCoders(dev.SyncCodes())
 	case evdev.EV_KEY:
-		return dev.Keycodes()
+		return asInputCoders(dev.Keycodes())
 	case evdev.EV_REL:
-		return dev.RelativeCodes()
+		return asInputCoders(dev.RelativeCodes())
 	case evdev.EV_ABS:
-		return dev.AbsoluteCodes()
+		return asInputCoders(dev.AbsoluteCodes())
 	case evdev.EV_MSC:
-		return dev.MiscCodes()
+		return asInputCoders(dev.MiscCodes())
 	case evdev.EV_SW:
-		return dev.SwitchCodes()
+		return asInputCoders(dev.SwitchCodes())
 	case evdev.EV_LED:
-		return dev.LEDCodes()
+		return asInputCoders(dev.LEDCodes())
 	case evdev.EV_SND:
-		return dev.SoundCodes()
+		return asInputCoders(dev.SoundCodes())
 	case evdev.EV_REP:
-		return dev.RepeatCodes()
+		return asInputCoders(dev.RepeatCodes())
 	case evdev.EV_FF:
-		return dev.FFCodes()
+		return asInputCoders(dev.FFCodes())
 	case evdev.EV_PWR:
-		return dev.PowerCodes()
+		return asInputCoders(dev.PowerCodes())
 	case evdev.EV_FF_STATUS:
-		return dev.FFStatusCodes()
+		return asInputCoders(dev.FFStatusCodes())
 	default:
 		return nil, fmt.Errorf("event %d (%s): %w", event, event, ErrUnsupportedEvent)
 	}
@@ -622,6 +632,7 @@ func setAny[T any](
 	return nil
 }
 
+// getStr wraps [ioctl.GetStr], prefixing any error with errMsg.
 func getStr(
 	fd uintptr,
 	reqFn func(length uint32) (uint32, error),
@@ -641,6 +652,7 @@ func getStr(
 	return str, nil
 }
 
+// getBitmask wraps [ioctl.GetBitmask], prefixing any error with errMsg.
 func getBitmask[T evdev.InputCode](
 	fd uintptr,
 	req func(length uint32) (uint32, error),
@@ -658,4 +670,13 @@ func getBitmask[T evdev.InputCode](
 	}
 
 	return codes, nil
+}
+
+// asInputCoders wraps [evdev.AsInputCoders], returning any error passed in.
+func asInputCoders[T evdev.InputCode](codes []T, err error) ([]evdev.InputCoder, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	return evdev.AsInputCoders(codes), nil
 }
