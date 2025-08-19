@@ -10,4 +10,4 @@
 // with the Linux input API. The package also includes architecture‑specific
 // representations of kernel structs so input event data can be read and
 // parsed accurately across supported platforms.
-package evdev
+package input

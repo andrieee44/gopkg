@@ -1,4 +1,4 @@
-package evdev
+package input
 
 import "github.com/andrieee44/gopkg/linux/uapi/ioctl"
 

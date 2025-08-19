@@ -10,7 +10,8 @@ import (
 	"syscall"
 
 	"github.com/andrieee44/gopkg/linux/evdev"
-	"github.com/andrieee44/gopkg/linux/uapi"
+	"github.com/andrieee44/gopkg/linux/uapi/input"
+	"github.com/andrieee44/gopkg/linux/uapi/ioctl"
 )
 
 func exit(err error) {

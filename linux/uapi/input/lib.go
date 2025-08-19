@@ -1,4 +1,4 @@
-package evdev
+package input
 
 import (
 	"fmt"

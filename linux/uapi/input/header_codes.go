@@ -1,4 +1,4 @@
-package evdev
+package input
 
 const (
 	// INPUT_PROP_POINTER marks the device as requiring on‑screen
