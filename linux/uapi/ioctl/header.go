@@ -29,10 +29,10 @@ const (
 	// IOC_NRSHIFT is the bit offset of the request number field.
 	IOC_NRSHIFT = 0
 
-	// IOC_TYPESHIFT is the bit offset of the request type field
+	// IOC_TYPESHIFT is the bit offset of the request type field.
 	IOC_TYPESHIFT = IOC_NRSHIFT + IOC_NRBITS
 
-	// IOC_SIZESHIFT is the bit offset of the size field
+	// IOC_SIZESHIFT is the bit offset of the size field.
 	IOC_SIZESHIFT = IOC_TYPESHIFT + IOC_TYPEBITS
 )
 
@@ -57,7 +57,7 @@ var (
 	// payload size. Declared as a variable so it can be modified at
 	// runtime — use SetIOC_SIZEBITS to adjust for platform or header
 	// differences.
-	IOC_SIZEBITS uint32 = 8
+	IOC_SIZEBITS uint32 = 14
 
 	// IOC_DIRBITS is the number of bits reserved for the “direction” field
 	// (e.g., read, write, none) in an ioctl command number. Declared as

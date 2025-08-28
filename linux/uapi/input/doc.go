@@ -1,4 +1,4 @@
-// Package evdev provides Go bindings for the Linux input event subsystem,
+// Package input provides Go bindings for the Linux input event subsystem,
 // mirroring the constants, types, and structures defined in the kernel’s
 // <linux/input.h> header. It exposes the event types, codes, and related
 // definitions used to interpret data from /dev/input/event* devices,

@@ -2,10 +2,10 @@
 
 package input
 
-// InputEventTime stores the timestamp of an input event for 64‑bit
+// EventTime stores the timestamp of an input event for 64‑bit
 // architectures such as amd64 and arm64. It matches the layout used
 // by the Linux kernel’s input_event struct for these platforms.
-type InputEventTime struct {
+type EventTime struct {
 	// Sec is the number of whole seconds since the Unix epoch
 	// (January 1, 1970 UTC) at which the event occurred.
 	Sec int64

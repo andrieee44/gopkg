@@ -83,12 +83,6 @@ func GetStr(
 	return unix.ByteSliceToString(buf), nil
 }
 
-// ioc is an internal helper that builds an ioctl request code for the
-// given direction, type, and number values using the size of the type
-// parameter [T] to determine the size field. It calls [IOC_TYPECHECK]
-// to compute the size and returns any error from that check directly.
-// On success, it calls [IOC] with the provided dir, typ, nr, and the
-// computed size to produce the encoded request code.
 func ioc[T any](dir, typ, nr uint32) (uint32, error) {
 	var (
 		size uint32

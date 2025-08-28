@@ -13,7 +13,7 @@ import (
 // the codes whose bits are set. It returns a slice of T values representing
 // the bits that were set. An error is returned if obtaining the request
 // code, performing the ioctl call, or sizing the buffer fails.
-func GetBitmask[T InputCode](
+func GetBitmask[T Code](
 	fd uintptr,
 	req func(length uint32) (uint32, error),
 	count T,
@@ -34,7 +34,7 @@ func GetBitmask[T InputCode](
 		return req(uint32(len(buf)))
 	}, &buf[0])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get bitmask: %w", err)
 	}
 
 	codes = make([]T, 0, count)
@@ -50,9 +50,9 @@ func GetBitmask[T InputCode](
 	return codes, nil
 }
 
-// BitmaskRequest returns a closure that calls [EVIOCGBIT] for the given
+// BitmaskReq returns a closure that calls [EVIOCGBIT] for the given
 // event code.
-func BitmaskReq(event InputEventCode) func(uint32) (uint32, error) {
+func BitmaskReq(event EventCode) func(uint32) (uint32, error) {
 	return func(length uint32) (uint32, error) {
 		return EVIOCGBIT(event, length)
 	}
@@ -61,7 +61,7 @@ func BitmaskReq(event InputEventCode) func(uint32) (uint32, error) {
 // IsMultiTouch reports whether the given absolute axis code represents a
 // multi-touch event, such as contact dimensions, position, tool type, or
 // tracking information. Returns true for ABS_MT_* codes, false otherwise.
-func IsMultiTouch(abs InputAbsoluteCode) bool {
+func IsMultiTouch(abs AbsoluteCode) bool {
 	switch abs {
 	case ABS_MT_TOUCH_MAJOR,
 		ABS_MT_TOUCH_MINOR,
@@ -83,18 +83,60 @@ func IsMultiTouch(abs InputAbsoluteCode) bool {
 	}
 }
 
-// AsInputCoders converts a slice of type T to a slice of InputCoder.
-func AsInputCoders[T InputCode](codes []T) []InputCoder {
+// AsCoders converts a slice of type T to a slice of Coder.
+func AsCoders[T Code](codes []T) []Coder {
 	var (
-		coders []InputCoder
+		coders []Coder
 		idx    int
 		value  T
 	)
 
-	coders = make([]InputCoder, len(codes))
+	coders = make([]Coder, len(codes))
 	for idx, value = range codes {
-		coders[idx] = InputCoder(value)
+		coders[idx] = Coder(value)
 	}
 
 	return coders
+}
+
+func ior[T any](typ, nr uint32, errMsg string) (uint32, error) {
+	var (
+		req uint32
+		err error
+	)
+
+	req, err = ioctl.IOR[T](typ, nr)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", errMsg, err)
+	}
+
+	return req, nil
+}
+
+func iow[T any](typ, nr uint32, errMsg string) (uint32, error) {
+	var (
+		req uint32
+		err error
+	)
+
+	req, err = ioctl.IOW[T](typ, nr)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", errMsg, err)
+	}
+
+	return req, nil
+}
+
+func ioc(dir, typ, nr, size uint32, errMsg string) (uint32, error) {
+	var (
+		req uint32
+		err error
+	)
+
+	req, err = ioctl.IOC(dir, typ, nr, size)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", errMsg, err)
+	}
+
+	return req, nil
 }

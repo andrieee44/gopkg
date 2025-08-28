@@ -1,4 +1,4 @@
-// Package bits provides bit-level operations.
+// Package bitops provides bit-level operations.
 package bitops
 
 import "golang.org/x/exp/constraints"
@@ -17,11 +17,11 @@ func Bytes[T constraints.Integer](bits T) []byte {
 // OverflowsSigned reports whether value cannot be represented
 // in a signed integer type using the given number of bits.
 func OverflowsSigned[T constraints.Signed](bits, value T) bool {
-	return value < -(1<<(bits-1)) || value > (1<<(bits-1))-1
+	return value < -(1<<(bits-1)) || value >= (1<<(bits-1))
 }
 
 // OverflowsUnsigned reports whether value cannot be represented
 // in an unsigned integer type using the given number of bits.
 func OverflowsUnsigned[T constraints.Unsigned](bits, value T) bool {
-	return value > (1<<bits)-1
+	return value >= (1 << bits)
 }

@@ -2,189 +2,189 @@ package input
 
 import "fmt"
 
-// InputCode represents any input event code as a generic constraint.
-type InputCode interface {
-	InputPropCode |
-		InputEventCode |
-		InputSyncCode |
-		InputKeyCode |
-		InputRelativeCode |
-		InputAbsoluteCode |
-		InputSwitchCode |
-		InputMiscCode |
-		InputLEDCode |
-		InputRepeatCode |
-		InputSoundCode |
-		InputBusCode |
-		InputMultiTouchCode |
-		InputFFCode |
-		InputFFStatusCode
+// Code represents any input event code as a generic constraint.
+type Code interface {
+	PropCode |
+		EventCode |
+		SyncCode |
+		KeyCode |
+		RelativeCode |
+		AbsoluteCode |
+		SwitchCode |
+		MiscCode |
+		LEDCode |
+		RepeatCode |
+		SoundCode |
+		BusCode |
+		MultiTouchCode |
+		FFCode |
+		FFStatusCode
 }
 
-// InputCoder represents any input event code.
-type InputCoder interface {
+// Coder represents any input event code.
+type Coder interface {
 	fmt.Stringer
 	Value() uint32
 }
 
-// InputPropCode identifies a property supported by an input device.
+// PropCode identifies a property supported by an input device.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputPropCode
-type InputPropCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=PropCode
+type PropCode uint32
 
-// InputEventCode identifies the broad event category for an input
+// EventCode identifies the broad event category for an input
 // event.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputEventCode
-type InputEventCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=EventCode
+type EventCode uint32
 
-// InputSyncCode describes synchronization events that delimit
+// SyncCode describes synchronization events that delimit
 // packets of input data or change reporting mode.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputSyncCode
-type InputSyncCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=SyncCode
+type SyncCode uint32
 
-// InputKeyCode represents a keyboard or button key code.
+// KeyCode represents a keyboard or button key code.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputKeyCode
-type InputKeyCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=KeyCode
+type KeyCode uint32
 
-// InputRelativeCode describes relative axes, such as pointer
+// RelativeCode describes relative axes, such as pointer
 // movement, scroll wheels, and tilt sensors.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputRelativeCode
-type InputRelativeCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=RelativeCode
+type RelativeCode uint32
 
-// InputAbsoluteCode describes absolute axes, such as touch‐screen
+// AbsoluteCode describes absolute axes, such as touch‐screen
 // coordinates, joystick positions, or tablet pressure.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputAbsoluteCode
-type InputAbsoluteCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=AbsoluteCode
+type AbsoluteCode uint32
 
-// InputSwitchCode describes switch events, usually binary toggles
+// SwitchCode describes switch events, usually binary toggles
 // like lid, tablet mode, or proximity sensors.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputSwitchCode
-type InputSwitchCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=SwitchCode
+type SwitchCode uint32
 
-// InputMiscCode covers miscellaneous event codes that don’t fit
+// MiscCode covers miscellaneous event codes that don’t fit
 // into other categories, such as drive insert/eject, auto-repeat
 // toggle, or power events.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputMiscCode
-type InputMiscCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=MiscCode
+type MiscCode uint32
 
-// InputLEDCode represents status LEDs on a device, such as
+// LEDCode represents status LEDs on a device, such as
 // keyboard or system LEDs.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputLEDCode
-type InputLEDCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=LEDCode
+type LEDCode uint32
 
-// InputRepeatCode defines auto‐repeat settings for keys.
+// RepeatCode defines auto‐repeat settings for keys.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputRepeatCode
-type InputRepeatCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=RepeatCode
+type RepeatCode uint32
 
-// InputSoundCode describes simple tone and sound events,
+// SoundCode describes simple tone and sound events,
 // typically used for system beeps.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputSoundCode
-type InputSoundCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=SoundCode
+type SoundCode uint32
 
-// InputBusCode identifies the hardware bus (USB, PCI, Bluetooth, etc.)
+// BusCode identifies the hardware bus (USB, PCI, Bluetooth, etc.)
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputBusCode
-type InputBusCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=BusCode
+type BusCode uint32
 
-// InputMultiTouchCode represents multi-touch event codes
+// MultiTouchCode represents multi-touch event codes
 // (MT_SLOT, MT_POSITION_X, MT_TRACKING_ID, etc.)
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputMultiTouchCode
-type InputMultiTouchCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=MultiTouchCode
+type MultiTouchCode uint32
 
-// InputFFCode denotes force-feedback effect types
+// FFCode denotes force-feedback effect types
 // (FF_RUMBLE, FF_SPRING, FF_PERIODIC, etc.)
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputFFCode
-type InputFFCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=FFCode
+type FFCode uint32
 
-// InputFFStatusCode holds the status value for an FF_STATUS event.
+// FFStatusCode holds the status value for an FF_STATUS event.
 //
-//go:generate go run github.com/dmarkham/enumer -type=InputFFStatusCode
-type InputFFStatusCode uint32
+//go:generate go run github.com/dmarkham/enumer -type=FFStatusCode
+type FFStatusCode uint32
 
-// Value returns the uint32 numeric representation of the InputPropCode.
-func (code InputPropCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the PropCode.
+func (code PropCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputEventCode.
-func (code InputEventCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the EventCode.
+func (code EventCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputSyncCode.
-func (code InputSyncCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the SyncCode.
+func (code SyncCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputKeyCode.
-func (code InputKeyCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the KeyCode.
+func (code KeyCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputRelativeCode.
-func (code InputRelativeCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the RelativeCode.
+func (code RelativeCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputAbsoluteCode.
-func (code InputAbsoluteCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the AbsoluteCode.
+func (code AbsoluteCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputSwitchCode.
-func (code InputSwitchCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the SwitchCode.
+func (code SwitchCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputMiscCode.
-func (code InputMiscCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the MiscCode.
+func (code MiscCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputLEDCode.
-func (code InputLEDCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the LEDCode.
+func (code LEDCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputRepeatCode.
-func (code InputRepeatCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the RepeatCode.
+func (code RepeatCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputSoundCode.
-func (code InputSoundCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the SoundCode.
+func (code SoundCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputBusCode.
-func (code InputBusCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the BusCode.
+func (code BusCode) Value() uint32 {
 	return uint32(code)
 }
 
 // Value returns the uint32 numeric representation of the
-// InputMultiTouchCode.
-func (code InputMultiTouchCode) Value() uint32 {
+// MultiTouchCode.
+func (code MultiTouchCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputFFCode.
-func (code InputFFCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the FFCode.
+func (code FFCode) Value() uint32 {
 	return uint32(code)
 }
 
-// Value returns the uint32 numeric representation of the InputFFStatusCode.
-func (code InputFFStatusCode) Value() uint32 {
+// Value returns the uint32 numeric representation of the FFStatusCode.
+func (code FFStatusCode) Value() uint32 {
 	return uint32(code)
 }
