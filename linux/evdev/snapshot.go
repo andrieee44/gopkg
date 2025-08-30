@@ -1,21 +1,160 @@
 package evdev
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/andrieee44/gopkg/linux/uapi/input"
 )
 
+// Snapshot captures a point-in-time view of a [Device]'s state and
+// capabilities. A Snapshot includes identifiers, repeat settings, enabled
+// and supported events, absolute axis metadata, multi-touch information,
+// and descriptor fields such as Name, Filename, and Version.
 type Snapshot struct {
-	ID             input.ID
-	Repeat         map[string]uint32
-	Enabled        map[string]map[string]bool
-	Supported      map[string][]string
-	Absolute       map[string]input.AbsInfo
-	MultiTouch     map[string][]input.AbsInfo
-	Name, Filename string
-	Version        int32
-	dev            *Device
+	// ID is the evdev device’s identifier.
+	ID input.ID
+
+	// Repeat contains the current key‐repeat parameters of the evdev device
+	// in milliseconds.
+	Repeat map[input.RepeatCode]uint32
+
+	// Absolute reports the absolute value for each absolute code.
+	Absolute map[input.AbsoluteCode]input.AbsInfo
+
+	// MultiTouch reports the absolute values for each code across
+	// multi-touch slots
+	MultiTouch map[input.AbsoluteCode][]int32
+
+	// Key reports the current state of each key code.
+	Key map[input.KeyCode]bool
+
+	// Switch reports the current state of each switch code.
+	Switch map[input.SwitchCode]bool
+
+	// LED reports the current state of each LED code.
+	LED map[input.LEDCode]bool
+
+	// Sound reports the current state of each sound code.
+	Sound map[input.SoundCode]bool
+
+	// Sync lists the sync event codes reported by the device.
+	Sync []input.SyncCode
+
+	// Relative lists the relative axis codes reported by the device.
+	Relative []input.RelativeCode
+
+	// Misc lists miscellaneous event codes reported by the device.
+	Misc []input.MiscCode
+
+	// ForceFeedback lists the force‑feedback effect codes supported
+	// by the device.
+	ForceFeedback []input.FFCode
+
+	// Power lists the power‑management key codes supported by the
+	// device.
+	Power []input.KeyCode
+
+	// ForceFeedbackStatus lists the force‑feedback status codes
+	// reported by the device.
+	ForceFeedbackStatus []input.FFStatusCode
+
+	// Name is the evdev device’s name.
+	Name string
+
+	// Filename is the name of the underlying file.
+	Filename string
+
+	// Version is the evdev device's driver version.
+	Version int32
+
+	dev *Device
+}
+
+// SnapshotPretty is a human‑readable representation of a [Snapshot].
+// It uses string keys for codes and names to make the data easier to
+// inspect in formats such as JSON or text output.
+type SnapshotPretty struct {
+	// ID is the evdev device’s identifier.
+	ID input.ID
+
+	// Repeat contains the current key‐repeat parameters of the evdev device
+	// in milliseconds.
+	Repeat map[string]uint32
+
+	// Absolute reports the absolute value for each absolute code.
+	Absolute map[string]input.AbsInfo
+
+	// MultiTouch reports the absolute values for each code across
+	// multi-touch slots
+	MultiTouch map[string][]int32
+
+	// Key reports the current state of each key code.
+	Key map[string]bool
+
+	// Switch reports the current state of each switch code.
+	Switch map[string]bool
+
+	// LED reports the current state of each LED code.
+	LED map[string]bool
+
+	// Sound reports the current state of each sound code.
+	Sound map[string]bool
+
+	// Sync lists the sync event codes reported by the device.
+	Sync []string
+
+	// Relative lists the relative axis codes reported by the device.
+	Relative []string
+
+	// Misc lists miscellaneous event codes reported by the device.
+	Misc []string
+
+	// ForceFeedback lists the force‑feedback effect codes supported
+	// by the device.
+	ForceFeedback []string
+
+	// Power lists the power‑management key codes supported by the
+	// device.
+	Power []string
+
+	// ForceFeedbackStatus lists the force‑feedback status codes
+	// reported by the device.
+	ForceFeedbackStatus []string
+
+	// Name is the evdev device’s name.
+	Name string
+
+	// Filename is the name of the underlying file.
+	Filename string
+
+	// Version is the evdev device's driver version.
+	Version int32
+}
+
+// Pretty returns a SnapshotPretty containing a human-readable form of snap.
+// The returned value has the same data as snap, but with event codes and
+// identifiers converted to descriptive strings.
+func (snap *Snapshot) Pretty() *SnapshotPretty {
+	return &SnapshotPretty{
+		ID:                  snap.ID,
+		Repeat:              mapPretty(snap.Repeat),
+		Absolute:            mapPretty(snap.Absolute),
+		MultiTouch:          mapPretty(snap.MultiTouch),
+		Key:                 mapPretty(snap.Key),
+		Switch:              mapPretty(snap.Switch),
+		LED:                 mapPretty(snap.LED),
+		Sound:               mapPretty(snap.Sound),
+		Sync:                slicePretty(snap.Sync),
+		Relative:            slicePretty(snap.Relative),
+		Misc:                slicePretty(snap.Misc),
+		ForceFeedback:       slicePretty(snap.ForceFeedback),
+		Power:               slicePretty(snap.Power),
+		ForceFeedbackStatus: slicePretty(snap.ForceFeedbackStatus),
+		Name:                snap.Name,
+		Filename:            snap.Filename,
+		Version:             snap.Version,
+	}
 }
 
 func (snap *Snapshot) repeat() error {
@@ -29,54 +168,9 @@ func (snap *Snapshot) repeat() error {
 		return err
 	}
 
-	snap.Repeat = make(map[string]uint32, 2)
-	snap.Repeat[codeStr(input.REP_DELAY)] = settings[0]
-	snap.Repeat[codeStr(input.REP_PERIOD)] = settings[1]
-
-	return nil
-}
-
-func (snap *Snapshot) allocAbsolute(codes []input.AbsoluteCode) {
-	var (
-		mTcount, absCount int
-		code              input.AbsoluteCode
-	)
-
-	for _, code = range codes {
-		if input.IsMultiTouch(code) {
-			mTcount++
-		} else {
-			absCount++
-		}
-	}
-
-	snap.Absolute = make(map[string]input.AbsInfo, absCount)
-	snap.MultiTouch = make(map[string][]input.AbsInfo, mTcount)
-}
-
-func (snap *Snapshot) multiTouch(
-	code input.AbsoluteCode,
-	absInfo input.AbsInfo,
-) error {
-	var (
-		codeInfo string
-		values   []int32
-		idx      int
-		err      error
-	)
-
-	codeInfo = codeStr(code)
-
-	values, err = snap.dev.MTSlotValues(code)
-	if err != nil {
-		return err
-	}
-
-	snap.MultiTouch[codeInfo] = make([]input.AbsInfo, len(values))
-
-	for idx = range snap.MultiTouch[codeInfo] {
-		snap.MultiTouch[codeInfo][idx] = absInfo
-		snap.MultiTouch[codeInfo][idx].Value = values[idx]
+	snap.Repeat = map[input.RepeatCode]uint32{
+		input.REP_DELAY:  settings[0],
+		input.REP_PERIOD: settings[1],
 	}
 
 	return nil
@@ -87,15 +181,17 @@ func (snap *Snapshot) absolute() error {
 		codes   []input.AbsoluteCode
 		code    input.AbsoluteCode
 		absInfo input.AbsInfo
+		values  []int32
 		err     error
 	)
 
-	codes, err = snap.dev.AbsoluteCodes()
+	codes, err = snap.dev.Absolutes()
 	if err != nil {
 		return err
 	}
 
-	snap.allocAbsolute(codes)
+	snap.Absolute = make(map[input.AbsoluteCode]input.AbsInfo, len(codes))
+	snap.MultiTouch = make(map[input.AbsoluteCode][]int32, mtLen(codes))
 
 	for _, code = range codes {
 		absInfo, err = snap.dev.AbsInfo(code)
@@ -103,71 +199,18 @@ func (snap *Snapshot) absolute() error {
 			return err
 		}
 
-		if !input.IsMultiTouch(code) {
-			snap.Absolute[codeStr(code)] = absInfo
+		snap.Absolute[code] = absInfo
+
+		values, err = snap.dev.MTSlotValues(code)
+		if err == nil {
+			snap.MultiTouch[code] = values
 
 			continue
 		}
 
-		err = snap.multiTouch(code, absInfo)
-		if err != nil {
+		if !errors.Is(err, ErrNotMultiTouch) {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (snap *Snapshot) enabled(event input.EventCode) error {
-	var (
-		codes, enabledCodes []input.Coder
-		codeInfo            string
-		code                input.Coder
-		err                 error
-	)
-
-	codes, err = snap.dev.Codes(event)
-	if err != nil {
-		return err
-	}
-
-	enabledCodes, err = snap.dev.EnabledCodes(event)
-	if err != nil {
-		return err
-	}
-
-	codeInfo = codeStr(event)
-	snap.Enabled[codeInfo] = make(map[string]bool, len(codes))
-
-	for _, code = range codes {
-		snap.Enabled[codeInfo][codeStr(code)] = false
-	}
-
-	for _, code = range enabledCodes {
-		snap.Enabled[codeInfo][codeStr(code)] = true
-	}
-
-	return nil
-}
-
-func (snap *Snapshot) supported(event input.EventCode) error {
-	var (
-		codes    []input.Coder
-		codeInfo string
-		idx      int
-		err      error
-	)
-
-	codes, err = snap.dev.Codes(event)
-	if err != nil {
-		return err
-	}
-
-	codeInfo = codeStr(event)
-	snap.Supported[codeInfo] = make([]string, len(codes))
-
-	for idx = range codes {
-		snap.Supported[codeInfo][idx] = codeStr(codes[idx])
 	}
 
 	return nil
@@ -185,22 +228,32 @@ func (snap *Snapshot) dispatcher(events []input.EventCode) error {
 			err = snap.repeat()
 		case input.EV_ABS:
 			err = snap.absolute()
-		case input.EV_KEY, input.EV_SW, input.EV_LED, input.EV_SND:
-			err = snap.enabled(event)
-		case input.EV_SYN,
-			input.EV_REL,
-			input.EV_MSC,
-			input.EV_FF,
-			input.EV_PWR,
-			input.EV_FF_STATUS:
-			err = snap.supported(event)
+		case input.EV_KEY:
+			err = enabled(&snap.Key, snap.dev.Keys, snap.dev.EnabledKeycodes)
+		case input.EV_SW:
+			err = enabled(&snap.Switch, snap.dev.Switches, snap.dev.EnabledSwitches)
+		case input.EV_LED:
+			err = enabled(&snap.LED, snap.dev.LEDs, snap.dev.EnabledLEDs)
+		case input.EV_SND:
+			err = enabled(&snap.Sound, snap.dev.Sounds, snap.dev.EnabledSounds)
+		case input.EV_SYN:
+			err = supported(&snap.Sync, snap.dev.Syncs)
+		case input.EV_REL:
+			err = supported(&snap.Relative, snap.dev.Relatives)
+		case input.EV_MSC:
+			err = supported(&snap.Misc, snap.dev.Miscs)
+		case input.EV_FF:
+			err = supported(&snap.ForceFeedback, snap.dev.ForceFeedbacks)
+		case input.EV_PWR:
+			err = supported(&snap.Power, snap.dev.Powers)
+		case input.EV_FF_STATUS:
+			err = supported(&snap.ForceFeedbackStatus, snap.dev.FFStatuses)
 		default:
 			return fmt.Errorf(
-				"%s: event %d (%s): %w",
+				"%s: event %s: %w",
 				snap.dev.Filename(),
-				event,
-				event,
-				ErrUnsupportedEvent,
+				event.Pretty(),
+				input.ErrUnsupportedEvent,
 			)
 		}
 
@@ -212,32 +265,99 @@ func (snap *Snapshot) dispatcher(events []input.EventCode) error {
 	return nil
 }
 
-func (snap *Snapshot) allocEnabledAndSupported(events []input.EventCode) {
+func enabled[T input.Code](
+	codesMap *map[T]bool,
+	codesFn, enabledCodesFn func() ([]T, error),
+) error {
 	var (
-		event                        input.EventCode
-		enabledCount, supportedCount int
+		codes, enabledCodes []T
+		code                T
+		err                 error
 	)
 
-	for _, event = range events {
-		switch event {
-		case input.EV_KEY, input.EV_SW, input.EV_LED, input.EV_SND:
-			enabledCount++
-		case input.EV_SYN,
-			input.EV_REL,
-			input.EV_MSC,
-			input.EV_FF,
-			input.EV_PWR,
-			input.EV_FF_STATUS:
-			supportedCount++
+	codes, err = codesFn()
+	if err != nil {
+		return err
+	}
+
+	enabledCodes, err = enabledCodesFn()
+	if err != nil {
+		return err
+	}
+
+	*codesMap = make(map[T]bool, len(codes))
+
+	for _, code = range codes {
+		(*codesMap)[code] = false
+	}
+
+	for _, code = range enabledCodes {
+		(*codesMap)[code] = true
+	}
+
+	return nil
+}
+
+func supported[T input.Code](codes *[]T, codesFn func() ([]T, error)) error {
+	var err error
+
+	*codes, err = codesFn()
+
+	return err
+}
+
+func mapPretty[K input.Code, V any](codes map[K]V) map[string]V {
+	var (
+		pretty map[string]V
+		keys   []K
+		key    K
+		idx    int
+		code   input.Coder
+	)
+
+	pretty = make(map[string]V, len(codes))
+	keys = make([]K, 0, len(codes))
+
+	for key = range codes {
+		keys = append(keys, key)
+	}
+
+	for idx, code = range input.AsCoders(keys) {
+		pretty[code.Pretty()] = codes[keys[idx]]
+	}
+
+	return pretty
+}
+
+func slicePretty[T input.Code](codes []T) []string {
+	var (
+		pretty []string
+		idx    int
+		code   input.Coder
+	)
+
+	pretty = make([]string, len(codes))
+
+	for idx, code = range input.AsCoders(codes) {
+		pretty[idx] = code.Pretty()
+	}
+
+	return pretty
+}
+
+func mtLen(codes []input.AbsoluteCode) int {
+	var (
+		code   input.AbsoluteCode
+		length int
+	)
+
+	for _, code = range codes {
+		if input.IsMultiTouch(code) {
+			length++
 		}
 	}
 
-	snap.Enabled = make(map[string]map[string]bool, enabledCount)
-	snap.Supported = make(map[string][]string, supportedCount)
-}
-
-func codeStr(coder input.Coder) string {
-	return fmt.Sprintf("%s (%d)", coder, coder)
+	return length
 }
 
 func newSnapshot(dev *Device) (*Snapshot, error) {
@@ -267,12 +387,10 @@ func newSnapshot(dev *Device) (*Snapshot, error) {
 		return nil, err
 	}
 
-	events, err = dev.EventCodes()
+	events, err = dev.Events()
 	if err != nil {
 		return nil, err
 	}
-
-	snap.allocEnabledAndSupported(events)
 
 	err = snap.dispatcher(events)
 	if err != nil {

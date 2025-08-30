@@ -24,6 +24,7 @@ disable = [
   "exhaustruct",
   "forbidigo",
   "gochecknoglobals",
+  "goconst",
   "grouper",
   "ireturn",
   "mnd",
@@ -53,7 +54,7 @@ unconvert.fast-math = true
 
 [linters.settings.gocritic]
 enable-all = true
-disabled-checks = [ "ptrToRefParam" ]
+disabled-checks = [ "ptrToRefParam", "unnamedResult" ]
 
 [linters.settings.decorder]
 disable-dec-num-check = false
@@ -84,7 +85,6 @@ captLocal.paramsOnly = false
 elseif.skipbalanced = false
 truncateCmp.skipArchDependent = false
 underef.skipRecvDeref = false
-unnamedResult.checkExported = true
 
 [linters.settings.govet]
 enable-all = true
@@ -107,6 +107,10 @@ confidence = 0
 
 [[linters.settings.revive.rules]]
 name = "cyclomatic"
+disabled = true
+
+[[linters.settings.revive.rules]]
+name = "flag-parameter"
 disabled = true
 
 [[linters.settings.revive.rules]]

@@ -5,6 +5,7 @@
 package evdev
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
@@ -15,21 +16,16 @@ import (
 	"github.com/andrieee44/gopkg/linux/uapi/ioctl"
 )
 
-var (
-	// ErrUnsupportedEvent is returned when the device does not support
-	// the specified input event code. In such cases, callers should
-	// invoke the underlying syscall directly.
-	ErrUnsupportedEvent error = errors.New("unsupported event, use syscall instead")
-
-	// ErrNotMultiTouch is returned when the provided absolute event code
-	// does not correspond to any multitouch axis or slot index.
-	ErrNotMultiTouch error = errors.New("is not a multitouch code")
-)
+// ErrNotMultiTouch is returned when the provided absolute event code
+// does not correspond to any multitouch axis or slot index.
+var ErrNotMultiTouch error = errors.New("is not a multitouch code")
 
 // Device represents an evdev device.
 // It wraps the opened /dev/input/eventN file.
 type Device struct {
-	file *os.File
+	file       *os.File
+	eventsChan chan input.Event
+	errChan    chan error
 }
 
 // NewDevice opens the evdev device at the given path and returns a [Device].
@@ -92,6 +88,7 @@ func Devices() ([]*Device, []error) {
 	return devices, errs
 }
 
+// Filename returns the name of the underlying file.
 func (dev *Device) Filename() string {
 	return dev.file.Name()
 }
@@ -198,7 +195,7 @@ func (dev *Device) SetScancodeV2(keymap input.KeymapEntry) error {
 	)
 }
 
-// Name returns the device’s name as a string.
+// Name returns the evdev device’s name as a string.
 // bufSize specifies the maximum number of bytes to read. If unsure,
 // use 256.
 func (dev *Device) Name(bufSize uint32) (string, error) {
@@ -255,7 +252,7 @@ func (dev *Device) MTSlotValues(abs input.AbsoluteCode) ([]int32, error) {
 	)
 
 	if !input.IsMultiTouch(abs) {
-		return nil, fmt.Errorf("%s: code %d (%s): %w", dev.Filename(), abs, abs, ErrNotMultiTouch)
+		return nil, fmt.Errorf("%s: code %s: %w", dev.Filename(), abs.Pretty(), ErrNotMultiTouch)
 	}
 
 	absInfo, err = dev.AbsInfo(input.ABS_MT_SLOT)
@@ -344,17 +341,16 @@ func (dev *Device) EnabledCodes(event input.EventCode) ([]input.Coder, error) {
 		return asInputCoders(dev.EnabledSounds())
 	default:
 		return nil, fmt.Errorf(
-			"%s: event %d (%s): %w",
+			"%s: event %s: %w",
 			dev.Filename(),
-			event,
-			event,
-			ErrUnsupportedEvent,
+			event.Pretty(),
+			input.ErrUnsupportedEvent,
 		)
 	}
 }
 
-// EventCodes returns the evdev device's supported event codes.
-func (dev *Device) EventCodes() ([]input.EventCode, error) {
+// Events returns the evdev device's supported event codes.
+func (dev *Device) Events() ([]input.EventCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(0),
@@ -363,8 +359,8 @@ func (dev *Device) EventCodes() ([]input.EventCode, error) {
 	)
 }
 
-// SyncCodes returns the evdev device's supported sync codes.
-func (dev *Device) SyncCodes() ([]input.SyncCode, error) {
+// Syncs returns the evdev device's supported sync codes.
+func (dev *Device) Syncs() ([]input.SyncCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_SYN),
@@ -373,8 +369,8 @@ func (dev *Device) SyncCodes() ([]input.SyncCode, error) {
 	)
 }
 
-// Keycodes returns the evdev device's supported keycodes.
-func (dev *Device) Keycodes() ([]input.KeyCode, error) {
+// Keys returns the evdev device's supported keycodes.
+func (dev *Device) Keys() ([]input.KeyCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_KEY),
@@ -383,8 +379,8 @@ func (dev *Device) Keycodes() ([]input.KeyCode, error) {
 	)
 }
 
-// RelativeCodes returns the evdev device's supported relative codes.
-func (dev *Device) RelativeCodes() ([]input.RelativeCode, error) {
+// Relatives returns the evdev device's supported relative codes.
+func (dev *Device) Relatives() ([]input.RelativeCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_REL),
@@ -393,8 +389,8 @@ func (dev *Device) RelativeCodes() ([]input.RelativeCode, error) {
 	)
 }
 
-// AbsoluteCodes returns the evdev device's supported absolute codes.
-func (dev *Device) AbsoluteCodes() ([]input.AbsoluteCode, error) {
+// Absolutes returns the evdev device's supported absolute codes.
+func (dev *Device) Absolutes() ([]input.AbsoluteCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_ABS),
@@ -403,8 +399,8 @@ func (dev *Device) AbsoluteCodes() ([]input.AbsoluteCode, error) {
 	)
 }
 
-// MiscCodes returns the evdev device's supported misc codes.
-func (dev *Device) MiscCodes() ([]input.MiscCode, error) {
+// Miscs returns the evdev device's supported misc codes.
+func (dev *Device) Miscs() ([]input.MiscCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_MSC),
@@ -413,8 +409,8 @@ func (dev *Device) MiscCodes() ([]input.MiscCode, error) {
 	)
 }
 
-// SwitchCodes returns the evdev device's supported switch codes.
-func (dev *Device) SwitchCodes() ([]input.SwitchCode, error) {
+// Switches returns the evdev device's supported switch codes.
+func (dev *Device) Switches() ([]input.SwitchCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_SW),
@@ -423,8 +419,8 @@ func (dev *Device) SwitchCodes() ([]input.SwitchCode, error) {
 	)
 }
 
-// LEDCodes returns the evdev device's supported LED codes.
-func (dev *Device) LEDCodes() ([]input.LEDCode, error) {
+// LEDs returns the evdev device's supported LED codes.
+func (dev *Device) LEDs() ([]input.LEDCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_LED),
@@ -433,8 +429,8 @@ func (dev *Device) LEDCodes() ([]input.LEDCode, error) {
 	)
 }
 
-// SoundCodes returns the evdev device's supported sound codes.
-func (dev *Device) SoundCodes() ([]input.SoundCode, error) {
+// Sounds returns the evdev device's supported sound codes.
+func (dev *Device) Sounds() ([]input.SoundCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_SND),
@@ -443,8 +439,8 @@ func (dev *Device) SoundCodes() ([]input.SoundCode, error) {
 	)
 }
 
-// RepeatCodes returns the evdev device's supported repeat codes.
-func (dev *Device) RepeatCodes() ([]input.RepeatCode, error) {
+// Repeats returns the evdev device's supported repeat codes.
+func (dev *Device) Repeats() ([]input.RepeatCode, error) {
 	var err error
 
 	_, err = dev.Repeat()
@@ -458,8 +454,8 @@ func (dev *Device) RepeatCodes() ([]input.RepeatCode, error) {
 	}, nil
 }
 
-// FFCodes returns the evdev device's supported force-feedback codes.
-func (dev *Device) FFCodes() ([]input.FFCode, error) {
+// ForceFeedbacks returns the evdev device's supported force-feedback codes.
+func (dev *Device) ForceFeedbacks() ([]input.FFCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_FF),
@@ -468,8 +464,8 @@ func (dev *Device) FFCodes() ([]input.FFCode, error) {
 	)
 }
 
-// PowerCodes returns the evdev device's supported power codes.
-func (dev *Device) PowerCodes() ([]input.KeyCode, error) {
+// Powers returns the evdev device's supported power codes.
+func (dev *Device) Powers() ([]input.KeyCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_PWR),
@@ -478,9 +474,9 @@ func (dev *Device) PowerCodes() ([]input.KeyCode, error) {
 	)
 }
 
-// FFStatusCodes returns the evdev device's supported force-feedback status
+// FFStatuses returns the evdev device's supported force-feedback status
 // codes.
-func (dev *Device) FFStatusCodes() ([]input.FFStatusCode, error) {
+func (dev *Device) FFStatuses() ([]input.FFStatusCode, error) {
 	return getBitmask(
 		dev,
 		input.BitmaskReq(input.EV_FF_STATUS),
@@ -495,41 +491,40 @@ func (dev *Device) FFStatusCodes() ([]input.FFStatusCode, error) {
 // underlying call are returned unchanged; unknown events return
 // [ErrUnsupportedEvent]. Using Codes erases the concrete code type,
 // so callers lose compile‑time type safety; prefer specific methods
-// such as [Device.Keycodes] or [Device.RelativeCodes] when typed
+// such as [Device.Keys] or [Device.Relatives] when typed
 // codes are required.
 func (dev *Device) Codes(event input.EventCode) ([]input.Coder, error) {
 	switch event {
 	case input.EV_SYN:
-		return asInputCoders(dev.SyncCodes())
+		return asInputCoders(dev.Syncs())
 	case input.EV_KEY:
-		return asInputCoders(dev.Keycodes())
+		return asInputCoders(dev.Keys())
 	case input.EV_REL:
-		return asInputCoders(dev.RelativeCodes())
+		return asInputCoders(dev.Relatives())
 	case input.EV_ABS:
-		return asInputCoders(dev.AbsoluteCodes())
+		return asInputCoders(dev.Absolutes())
 	case input.EV_MSC:
-		return asInputCoders(dev.MiscCodes())
+		return asInputCoders(dev.Miscs())
 	case input.EV_SW:
-		return asInputCoders(dev.SwitchCodes())
+		return asInputCoders(dev.Switches())
 	case input.EV_LED:
-		return asInputCoders(dev.LEDCodes())
+		return asInputCoders(dev.LEDs())
 	case input.EV_SND:
-		return asInputCoders(dev.SoundCodes())
+		return asInputCoders(dev.Sounds())
 	case input.EV_REP:
-		return asInputCoders(dev.RepeatCodes())
+		return asInputCoders(dev.Repeats())
 	case input.EV_FF:
-		return asInputCoders(dev.FFCodes())
+		return asInputCoders(dev.ForceFeedbacks())
 	case input.EV_PWR:
-		return asInputCoders(dev.PowerCodes())
+		return asInputCoders(dev.Powers())
 	case input.EV_FF_STATUS:
-		return asInputCoders(dev.FFStatusCodes())
+		return asInputCoders(dev.FFStatuses())
 	default:
 		return nil, fmt.Errorf(
-			"%s: event %d (%s): %w",
+			"%s: event %s: %w",
 			dev.Filename(),
-			event,
-			event,
-			ErrUnsupportedEvent,
+			event.Pretty(),
+			input.ErrUnsupportedEvent,
 		)
 	}
 }
@@ -636,6 +631,12 @@ func (dev *Device) SetClockID(clockID int32) error {
 	)
 }
 
+// Snapshot returns a point-in-time capture of dev's current state and
+// capabilities. The returned Snapshot reflects the device at the moment
+// of the call, including identifiers, enabled and supported events,
+// repeat settings, absolute axis details, multi-touch information, and
+// descriptor fields such as Name, Filename, and Version. If the snapshot
+// cannot be created, Snapshot returns a non-nil error.
 func (dev *Device) Snapshot() (*Snapshot, error) {
 	var (
 		info *Snapshot
@@ -650,6 +651,19 @@ func (dev *Device) Snapshot() (*Snapshot, error) {
 	return info, nil
 }
 
+// ReadEvents returns two read-only channels for receiving input events
+// and errors.
+// The first channel delivers [input.Event] values generated by the device.
+// The second channel reports errors encountered during event processing.
+func (dev *Device) ReadEvents() (<-chan input.Event, <-chan error) {
+	dev.eventsChan = make(chan input.Event)
+	dev.errChan = make(chan error)
+
+	go dev.serve()
+
+	return dev.eventsChan, dev.errChan
+}
+
 // Close closes the evdev device by closing its underlying file handle.
 func (dev *Device) Close() error {
 	var err error
@@ -660,6 +674,29 @@ func (dev *Device) Close() error {
 	}
 
 	return nil
+}
+
+func (dev *Device) serve() {
+	var (
+		event input.Event
+		err   error
+	)
+
+	for {
+		err = binary.Read(dev.file, binary.NativeEndian, &event)
+		if err == nil {
+			dev.eventsChan <- event
+
+			continue
+		}
+
+		dev.errChan <- err
+
+		close(dev.eventsChan)
+		close(dev.errChan)
+
+		return
+	}
 }
 
 func getAny[T any](

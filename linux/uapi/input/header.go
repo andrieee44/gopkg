@@ -14,7 +14,7 @@ type Event struct {
 	// Type is the high-level category of the event, such as EV_KEY for key
 	// or button events, EV_REL for relative motion, or EV_ABS for
 	// absolute axes.
-	Type uint16
+	Type EventCode
 
 	// Code is the specific identifier within Type, such as a keycode when
 	// Type is EV_KEY or an axis code when Type is EV_ABS.
