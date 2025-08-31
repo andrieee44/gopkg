@@ -59,6 +59,10 @@ type Snapshot struct {
 	// reported by the device.
 	ForceFeedbackStatus []input.FFStatusCode
 
+	// Properties lists the device property codes reported by the evdev
+	// device.
+	Properties []input.PropCode
+
 	// Name is the evdev device’s name.
 	Name string
 
@@ -122,6 +126,10 @@ type SnapshotPretty struct {
 	// reported by the device.
 	ForceFeedbackStatus []string
 
+	// Properties lists the device property codes reported by the evdev
+	// device.
+	Properties []string
+
 	// Name is the evdev device’s name.
 	Name string
 
@@ -151,6 +159,7 @@ func (snap *Snapshot) Pretty() *SnapshotPretty {
 		ForceFeedback:       slicePretty(snap.ForceFeedback),
 		Power:               slicePretty(snap.Power),
 		ForceFeedbackStatus: slicePretty(snap.ForceFeedbackStatus),
+		Properties:          slicePretty(snap.Properties),
 		Name:                snap.Name,
 		Filename:            snap.Filename,
 		Version:             snap.Version,
@@ -383,6 +392,11 @@ func newSnapshot(dev *Device) (*Snapshot, error) {
 	}
 
 	snap.Name, err = dev.Name(256)
+	if err != nil {
+		return nil, err
+	}
+
+	snap.Properties, err = dev.Properties()
 	if err != nil {
 		return nil, err
 	}
