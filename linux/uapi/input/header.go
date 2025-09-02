@@ -47,15 +47,15 @@ type ID struct {
 //
 // From [input.h]:
 //
-// struct input_absinfo - used by [EVIOCGABS]/[EVIOCSABS] ioctls
-// @value: latest reported value for the axis.
-// @minimum: specifies minimum value for the axis.
-// @maximum: specifies maximum value for the axis.
-// @fuzz: specifies fuzz value that is used to filter noise from the event
+// struct [AbsInfo] - used by [EVIOCGABS]/[EVIOCSABS] ioctls
+// @Value: latest reported value for the axis.
+// @Minimum: specifies minimum value for the axis.
+// @Maximum: specifies maximum value for the axis.
+// @Fuzz: specifies fuzz value that is used to filter noise from the event
 // stream.
-// @flat: values that are within this value will be discarded by joydev
+// @Flat: values that are within this value will be discarded by joydev
 // interface and reported as 0 instead.
-// @resolution: specifies resolution for the values reported for the axis.
+// @Resolution: specifies resolution for the values reported for the axis.
 //
 // Note that input core does not clamp reported values to the
 // [minimum, maximum] limits, such task is left to userspace.
@@ -97,17 +97,17 @@ type AbsInfo struct {
 //
 // From [input.h]:
 //
-// struct input_keymap_entry - used by [EVIOCGKEYCODE]/[EVIOCSKEYCODE] ioctls
-// @scancode: scancode represented in machine-endian form.
-// @len: length of the scancode that resides in @scancode buffer.
-// @index: index in the keymap, may be used instead of scancode
-// @flags: allows to specify how kernel should handle the request.
+// struct [KeymapEntry] - used by [EVIOCGKEYCODE]/[EVIOCSKEYCODE] ioctls
+// @Scancode: scancode represented in machine-endian form.
+// @Len: length of the scancode that resides in @Scancode buffer.
+// @Index: index in the keymap, may be used instead of scancode
+// @Flags: allows to specify how kernel should handle the request.
 // For example, setting [INPUT_KEYMAP_BY_INDEX] flag indicates that kernel
-// should perform lookup in keymap by @index instead of @scancode
-// @keycode: key code assigned to this scancode
+// should perform lookup in keymap by @Index instead of @Scancode
+// @Keycode: key code assigned to this scancode
 //
 // The structure is used to retrieve and modify keymap data. Users have
-// option of performing lookup either by @scancode itself or by @index
+// option of performing lookup either by @Scancode itself or by @Index
 // in keymap entry. [EVIOCGKEYCODE] will also return scancode or index
 // (depending on which element was used to perform lookup).
 //
@@ -151,9 +151,9 @@ type Mask struct {
 //
 // From [input.h]:
 //
-// struct ff_replay - defines scheduling of the force-feedback effect
-// @length: duration of the effect
-// @delay: delay before effect should start playing
+// struct [FFReplay] - defines scheduling of the force-feedback effect
+// @Length: duration of the effect
+// @Delay: delay before effect should start playing
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 type FFReplay struct {
@@ -168,9 +168,9 @@ type FFReplay struct {
 //
 // From [input.h]:
 //
-// struct ff_trigger - defines what triggers the force-feedback effect
-// @button: number of the button triggering the effect
-// @interval: controls how soon the effect can be re-triggered
+// struct [FFTrigger] - defines what triggers the force-feedback effect
+// @Button: number of the button triggering the effect
+// @Interval: controls how soon the effect can be re-triggered
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 type FFTrigger struct {
@@ -186,13 +186,13 @@ type FFTrigger struct {
 //
 // From [input.h]:
 //
-// struct ff_envelope - generic force-feedback effect envelope
-// @attack_length: duration of the attack (ms)
-// @attack_level: level at the beginning of the attack
-// @fade_length: duration of fade (ms)
-// @fade_level: level at the end of fade
+// struct [FFEnvelope] - generic force-feedback effect envelope
+// @AttackLength: duration of the attack (ms)
+// @AttackLevel: level at the beginning of the attack
+// @FadeLength: duration of fade (ms)
+// @FadeLevel: level at the end of fade
 //
-// The @attack_level and @fade_level are absolute values; when applying
+// The @AttackLevel and @FadeLevel are absolute values; when applying
 // envelope force-feedback core will convert to positive/negative
 // value based on polarity of the default level of the effect.
 // Valid range for the attack and fade levels is 0x0000 - 0x7fff
@@ -218,10 +218,10 @@ type FFEnvelope struct {
 //
 // From [input.h]:
 //
-// struct ff_constant_effect - defines parameters of a constant
+// struct [FFConstantEffect] - defines parameters of a constant
 // force-feedback effect
-// @level: strength of the effect; may be negative
-// @envelope: envelope data
+// @Level: strength of the effect; may be negative
+// @Envelope: envelope data
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 type FFConstantEffect struct {
@@ -236,10 +236,10 @@ type FFConstantEffect struct {
 //
 // From [input.h]:
 //
-// struct ff_ramp_effect - defines parameters of a ramp force-feedback effect
-// @start_level: beginning strength of the effect; may be negative
-// @end_level: final strength of the effect; may be negative
-// @envelope: envelope data
+// struct [FFRampEffect] - defines parameters of a ramp force-feedback effect
+// @StartLevel: beginning strength of the effect; may be negative
+// @EndLevel: final strength of the effect; may be negative
+// @Envelope: envelope data
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 type FFRampEffect struct {
@@ -259,15 +259,15 @@ type FFRampEffect struct {
 //
 // From [input.h]:
 //
-// struct ff_condition_effect - defines a spring or friction force-feedback
+// struct [FFConditionEffect] - defines a spring or friction force-feedback
 // effect
-// @right_saturation: maximum level when joystick moved all way to the right
-// @left_saturation: same for the left side
-// @right_coeff: controls how fast the force grows when the joystick moves
+// @RightSaturation: maximum level when joystick moved all way to the right
+// @LeftSaturation: same for the left side
+// @RightCoeff: controls how fast the force grows when the joystick moves
 // to the right
-// @left_coeff: same for the left side
-// @deadband: size of the dead zone, where no force is produced
-// @center: position of the dead zone
+// @LeftCoeff: same for the left side
+// @Deadband: size of the dead zone, where no force is produced
+// @Center: position of the dead zone
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 type FFConditionEffect struct {
@@ -299,22 +299,22 @@ type FFConditionEffect struct {
 //
 // From [input.h]:
 //
-// struct ff_periodic_effect - defines parameters of a periodic
+// struct [FFPeriodicEffect] - defines parameters of a periodic
 // force-feedback effect
-// @waveform: kind of the effect (wave)
-// @period: period of the wave (ms)
-// @magnitude: peak value
-// @offset: mean value of the wave (roughly)
-// @phase: 'horizontal' shift
-// @envelope: envelope data
-// @custom_len: number of samples ([FF_CUSTOM] only)
-// @custom_data: buffer of samples ([FF_CUSTOM] only)
+// @Waveform: kind of the effect (wave)
+// @Period: period of the wave (ms)
+// @Magnitude: peak value
+// @Offset: mean value of the wave (roughly)
+// @Phase: 'horizontal' shift
+// @Envelope: envelope data
+// @CustomLen: number of samples ([FF_CUSTOM] only)
+// @CustomData: buffer of samples ([FF_CUSTOM] only)
 //
 // Known waveforms - [FF_SQUARE], [FF_TRIANGLE], [FF_SINE], [FF_SAW_UP],
 // [FF_SAW_DOWN], [FF_CUSTOM]. The exact syntax [FF_CUSTOM] is undefined
 // for the time being as no driver supports it yet.
 //
-// Note: the data pointed by custom_data is copied by the driver.
+// Note: the data pointed by CustomData is copied by the driver.
 // You can therefore dispose of the memory after the upload/update.
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
@@ -353,12 +353,12 @@ type FFPeriodicEffect struct {
 //
 // From [input.h]:
 //
-// struct ff_rumble_effect - defines parameters of a periodic force-feedback
+// struct [FFRumbleEffect] - defines parameters of a periodic force-feedback
 // effect
-// @strong_magnitude: magnitude of the heavy motor
-// @weak_magnitude: magnitude of the light one
+// @StrongMagnitude: magnitude of the heavy motor
+// @WeakMagnitude: magnitude of the light one
 //
-// Some rumble pads have two motors of different weight. Strong_magnitude
+// Some rumble pads have two motors of different weight. StrongMagnitude
 // represents the magnitude of the vibration generated by the heavy one.
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
@@ -374,21 +374,21 @@ type FFRumbleEffect struct {
 //
 // From [input.h]:
 //
-// struct ff_effect - defines force feedback effect
-// @type: type of the effect ([FF_CONSTANT], [FF_PERIODIC], [FF_RAMP],
+// struct [FFEffect] - defines force feedback effect
+// @Type: type of the effect ([FF_CONSTANT], [FF_PERIODIC], [FF_RAMP],
 // [FF_SPRING], [FF_FRICTION], [FF_DAMPER], [FF_RUMBLE], [FF_INERTIA], or
 // [FF_CUSTOM])
-// @id: an unique id assigned to an effect
-// @direction: direction of the effect
-// @trigger: trigger conditions (struct ff_trigger)
-// @replay: scheduling of the effect (struct ff_replay)
-// @u: effect-specific structure (one of ff_constant_effect, ff_ramp_effect,
-// ff_periodic_effect, ff_condition_effect, ff_rumble_effect) further
-// defining effect parameters
+// @ID: an unique id assigned to an effect
+// @Direction: direction of the effect
+// @Trigger: trigger conditions (struct [FFTrigger])
+// @Replay: scheduling of the effect (struct [FFReplay])
+// @Effect: effect-specific structure (one of [FFConstantEffect],
+// [FFRampEffect], [FFPeriodicEffect], [FFConditionEffect], [FFRumbleEffect])
+// further defining effect parameters.
 //
 // This structure is sent through ioctl from the application to the driver.
-// To create a new effect application should set its @id to -1; the kernel
-// will return assigned @id which can later be used to update or delete
+// To create a new effect application should set its @ID to -1; the kernel
+// will return assigned @ID which can later be used to update or delete
 // this effect.
 //
 // Direction of the effect is encoded as follows:
@@ -403,8 +403,8 @@ type FFEffect struct {
 	// Type is the effect type.
 	Type uint16
 
-	// Id is the effect identifier. Set to -1 when creating a new effect.
-	Id int16
+	// ID is the effect identifier. Set to -1 when creating a new effect.
+	ID int16
 
 	// Direction is the force direction encoded in [0x0000..0xFFFF].
 	Direction uint16
@@ -421,7 +421,7 @@ type FFEffect struct {
 
 const (
 	// EV_VERSION is the version identifier for the Linux input-event
-	// interface. It corresponds to the EVIOCGVERSION ioctl request.
+	// interface.
 	EV_VERSION = 0x010001
 
 	// INPUT_KEYMAP_BY_INDEX is a flag for the EVIOCGKEYCODE_V2 and
@@ -689,8 +689,8 @@ func EVIOCGPROP(length uint32) (uint32, error) {
 //
 // From [input.h]:
 //
-// EVIOCGMTSLOTS(len) - get MT slot values
-// @len: size of the data buffer in bytes
+// EVIOCGMTSLOTS(length) - get MT slot values
+// @Length: size of the data buffer in bytes
 //
 // The ioctl buffer argument should be binary equivalent to
 //
@@ -699,18 +699,22 @@ func EVIOCGPROP(length uint32) (uint32, error) {
 //		__s32 values[num_slots];
 //	};
 //
+// NOTE: In Golang try implementing this struct as a int32[length+2] and
+// type cast the first element to uint32.
+//
 // where num_slots is the (arbitrary) number of MT slots to extract.
 //
-// The ioctl size argument (len) is the size of the buffer, which
-// should satisfy len = (num_slots + 1) * sizeof(__s32). If len is
+// The ioctl size argument (length) is the size of the buffer, which
+// should satisfy length = (num_slots + 1) * sizeof(__s32). If length is
 // too small to fit all available slots, the first num_slots are
 // returned.
 //
-// Before the call, code is set to the wanted ABS_MT event type. On
+// Before the call, code is set to the wanted ABS_MT* event type. On
 // return, values[] is filled with the slot values for the specified
-// ABS_MT code.
+// ABS_MT* code.
 //
-// If the request code is not an ABS_MT value, -EINVAL is returned.
+// If the request code is not an [ABS_MT*] value, -EINVAL is
+// returned.
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 func EVIOCGMTSLOTS(length uint32) (uint32, error) {
@@ -795,7 +799,7 @@ func EVIOCREVOKE() (uint32, error) {
 // From [input.h]:
 //
 // This ioctl allows user to retrieve the current event mask for specific
-// event type. The argument must be of type "struct input_mask" and
+// event type. The argument must be of type "struct [Mask]" and
 // specifies the event type to query, the address of the receive buffer
 // and the size of the receive buffer.
 //
