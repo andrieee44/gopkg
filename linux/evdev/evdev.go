@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"unsafe"
@@ -555,33 +556,40 @@ func (dev *Device) SetAbsInfo(abs input.AbsoluteCode, absInfo input.AbsInfo) err
 	)
 }
 
-// SendFF sends a force-feedback effect to the evdev device.
+// SendFF uploads a force feedback effect to the device's internal buffer.
+// To request a new effect ID, set the ID field of [input.FFEffect] to -1
+// before calling this method. This does not play the effect; use [PlayFF]
+// to trigger playback.
 func (dev *Device) SendFF(effect input.FFEffect) error {
 	return setAny(
 		dev,
 		input.EVIOCSFF,
 		&effect,
-		"failed to send evdev device force-feedback",
+		"failed to upload force feedback to evdev device buffer",
 	)
 }
 
-// RemoveFF removes a force-feedback effect of the evdev device.
+// RemoveFF deletes a force feedback effect from the device's internal buffer.
+// The effect is identified by its ID. Once removed, the effect cannot be
+// played again unless re-uploaded using [SendFF].
 func (dev *Device) RemoveFF(id int32) error {
 	return setAny(
 		dev,
 		input.EVIOCRMFF,
 		&id,
-		"failed to remove evdev device force-feedback",
+		"failed to remove force feedback in evdev device buffer",
 	)
 }
 
-// FFEffects returns the amount of force-feedback effects of the evdev device.
+// FFEffects reports how many force feedback effects the device can store.
+// This represents the size of the device's internal buffer for force
+// feedback effects, not how many are currently loaded.
 func (dev *Device) FFEffects() (int32, error) {
 	return getAny(
 		dev,
 		input.EVIOCGEFFECTS,
 		new(int32),
-		"failed to get evdev device force-feedback effects",
+		"failed to get evdev device force feedback buffer size",
 	)
 }
 
@@ -621,7 +629,7 @@ func (dev *Device) SetEventMask(mask input.Mask) error {
 
 // SetClockID sets the clock source used by the kernel when timestamping
 // events read from the device. The clockID must be one of the standard
-// clock constants.
+// clock constants such as [sys/unix.CLOCK_MONOTONIC].
 func (dev *Device) SetClockID(clockID int32) error {
 	return setAny(
 		dev,
@@ -662,6 +670,36 @@ func (dev *Device) ReadEvents() (<-chan input.Event, <-chan error) {
 	go dev.serve()
 
 	return dev.eventsChan, dev.errChan
+}
+
+// PlayFF triggers playback of a force feedback effect previously uploaded.
+// The effect is identified by its ID. The value specifies how many times the
+// effect should repeat. Note that while effect IDs are handled as int32 when
+// uploading or removing, only the lower 16 bits are used when playing—due to
+// the input_event.code field being a uint16. IDs outside the 0–65535 range
+// cannot be played and will return an error.
+func (dev *Device) PlayFF(id, value int32) error {
+	var err error
+
+	if id < 0 || id > math.MaxUint16 {
+		return fmt.Errorf(
+			"%s: force feedback id %d exceeds uint16 limit: failed to play force feedback: %w",
+			dev.Filename(),
+			id,
+			ioctl.ErrSizeOverflow,
+		)
+	}
+
+	err = binary.Write(dev.file, binary.NativeEndian, input.Event{
+		Type:  input.EV_FF,
+		Code:  uint16(id),
+		Value: value,
+	})
+	if err != nil {
+		return fmt.Errorf("%s: failed to play force feedback: %w", dev.Filename(), err)
+	}
+
+	return nil
 }
 
 // Close closes the evdev device by closing its underlying file handle.
