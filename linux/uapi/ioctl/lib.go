@@ -83,6 +83,13 @@ func GetStr(
 	return unix.ByteSliceToString(buf), nil
 }
 
+// Empty performs an ioctl on fd using a request code from reqFn with no
+// argument. Returns an error if obtaining the request code or the ioctl
+// itself fails.
+func Empty(fd uintptr, reqFn func() (uint32, error)) error {
+	return SetAny(fd, reqFn, new(struct{}))
+}
+
 func ioc[T any](dir, typ, nr uint32) (uint32, error) {
 	var (
 		size uint32

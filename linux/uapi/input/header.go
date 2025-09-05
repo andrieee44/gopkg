@@ -1,6 +1,9 @@
 package input
 
-import "github.com/andrieee44/gopkg/linux/uapi/ioctl"
+import (
+	"github.com/andrieee44/gopkg/linux/internal/ioctlwrap"
+	"github.com/andrieee44/gopkg/linux/uapi/ioctl"
+)
 
 // Event represents a single input event delivered by the Linux kernel’s
 // input subsystem.
@@ -47,8 +50,7 @@ type ID struct {
 //
 // From [input.h]:
 //
-// struct [AbsInfo] - used by [EVIOCGABS]/[EVIOCSABS] ioctls
-// @Value: latest reported value for the axis.
+// struct [AbsInfo] - used by [EVIOCGABS]/[EVIOCSABS] ioctls @Value: latest reported value for the axis.
 // @Minimum: specifies minimum value for the axis.
 // @Maximum: specifies maximum value for the axis.
 // @Fuzz: specifies fuzz value that is used to filter noise from the event
@@ -610,77 +612,77 @@ const (
 // EVIOCGVERSION is the ioctl request code to get the evdev
 // driver version. It reads an int into the provided variable.
 func EVIOCGVERSION() (uint32, error) {
-	return ior[int32]('E', 0x01, "EVIOCGVERSION request failed")
+	return ioctlwrap.IOR[int32]('E', 0x01, "EVIOCGVERSION request failed")
 }
 
 // EVIOCGID is the ioctl request code to retrieve the device identifier.
 // It reads into an ID struct.
 func EVIOCGID() (uint32, error) {
-	return ior[ID]('E', 0x02, "EVIOCGID request failed")
+	return ioctlwrap.IOR[ID]('E', 0x02, "EVIOCGID request failed")
 }
 
 // EVIOCGREP is the ioctl request code to get keyboard auto‐repeat
 // settings. It reads a [2]uint32: [0] = delay in ms, [1] = period in ms.
 func EVIOCGREP() (uint32, error) {
-	return ior[[2]uint32]('E', 0x03, "EVIOCGREP request failed")
+	return ioctlwrap.IOR[[2]uint32]('E', 0x03, "EVIOCGREP request failed")
 }
 
 // EVIOCSREP is the ioctl request code to set keyboard auto‐repeat
 // settings. It writes a [2]uint32: [0] = delay in ms, [1] = period in ms.
 func EVIOCSREP() (uint32, error) {
-	return iow[[2]uint32]('E', 0x03, "EVIOCSREP request failed")
+	return ioctlwrap.IOW[[2]uint32]('E', 0x03, "EVIOCSREP request failed")
 }
 
 // EVIOCGKEYCODE is the ioctl request code to get a simple keycode
 // mapping. It reads a [2]uint32: [0] = scancode, [1] = keycode.
 func EVIOCGKEYCODE() (uint32, error) {
-	return ior[[2]uint32]('E', 0x04, "EVIOCGKEYCODE request failed")
+	return ioctlwrap.IOR[[2]uint32]('E', 0x04, "EVIOCGKEYCODE request failed")
 }
 
 // EVIOCGKEYCODE_V2 is the ioctl request code to get an extended
 // keymap entry. It reads into a KeymapEntry struct.
 func EVIOCGKEYCODE_V2() (uint32, error) {
-	return ior[KeymapEntry]('E', 0x04, "EVIOCGKEYCODE_V2 request failed")
+	return ioctlwrap.IOR[KeymapEntry]('E', 0x04, "EVIOCGKEYCODE_V2 request failed")
 }
 
 // EVIOCSKEYCODE is the ioctl request code to set a simple keycode
 // mapping. It writes a [2]uint32: [0] = scancode, [1] = keycode.
 func EVIOCSKEYCODE() (uint32, error) {
-	return iow[[2]uint32]('E', 0x04, "EVIOCSKEYCODE request failed")
+	return ioctlwrap.IOW[[2]uint32]('E', 0x04, "EVIOCSKEYCODE request failed")
 }
 
 // EVIOCSKEYCODE_V2 is the ioctl request code to set an extended
 // keymap entry. It writes in a KeymapEntry struct.
 func EVIOCSKEYCODE_V2() (uint32, error) {
-	return iow[KeymapEntry]('E', 0x04, "EVIOCSKEYCODE_V2 request failed")
+	return ioctlwrap.IOW[KeymapEntry]('E', 0x04, "EVIOCSKEYCODE_V2 request failed")
 }
 
 // EVIOCGNAME returns the ioctl request code to retrieve the device name.
 // The length parameter specifies the size of the buffer (in bytes) that
 // will hold the returned name string.
 func EVIOCGNAME(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x06, length, "EVIOCGNAME request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x06, length, "EVIOCGNAME request failed")
 }
 
 // EVIOCGPHYS returns the ioctl request code to retrieve the device
 // physical location path. The length parameter specifies the size of the
 // buffer (in bytes) that will hold the returned physical path string.
 func EVIOCGPHYS(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x07, length, "EVIOCGPHYS request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x07, length, "EVIOCGPHYS request failed")
 }
 
 // EVIOCGUNIQ returns the ioctl request code to retrieve the device’s
 // unique identifier. The length parameter specifies the size of the
 // buffer (in bytes) that will hold the returned unique ID string.
 func EVIOCGUNIQ(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x08, length, "EVIOCGUNIQ request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x08, length, "EVIOCGUNIQ request failed")
 }
 
 // EVIOCGPROP returns the ioctl request code to retrieve the device’s
 // property bitmask. The length parameter specifies the size of the
 // buffer (in bytes) that will hold the returned bitmask.
 func EVIOCGPROP(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x09, length, "EVIOCGPROP request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x09, length, "EVIOCGPROP request failed")
 }
 
 // EVIOCGMTSLOTS returns the Linux ioctl command number for reading an
@@ -718,27 +720,27 @@ func EVIOCGPROP(length uint32) (uint32, error) {
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 func EVIOCGMTSLOTS(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x0a, length, "EVIOCGMTSLOTS request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x0a, length, "EVIOCGMTSLOTS request failed")
 }
 
 // EVIOCGKEY returns the ioctl request code for retrieving the key bitmask.
 func EVIOCGKEY(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x18, length, "EVIOCGKEY request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x18, length, "EVIOCGKEY request failed")
 }
 
 // EVIOCGLED returns the ioctl request code for retrieving the LED bitmask.
 func EVIOCGLED(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x19, length, "EVIOCGLED request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x19, length, "EVIOCGLED request failed")
 }
 
 // EVIOCGSND returns the ioctl request code for retrieving the sound bitmask.
 func EVIOCGSND(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x1a, length, "EVIOCGSND request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x1a, length, "EVIOCGSND request failed")
 }
 
 // EVIOCGSW returns the ioctl request code for retrieving the switch bitmask.
 func EVIOCGSW(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', 0x1b, length, "EVIOCGSW request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', 0x1b, length, "EVIOCGSW request failed")
 }
 
 // EVIOCGBIT returns the ioctl request code for retrieving the bitmask of
@@ -747,50 +749,50 @@ func EVIOCGSW(length uint32) (uint32, error) {
 // supported event types. The length parameter specifies, in bytes, the
 // size of the buffer that will receive the bitmask.
 func EVIOCGBIT(ev EventCode, length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, 'E', uint32(0x20+ev), length, "EVIOCGBIT request failed")
+	return ioctlwrap.IOC(ioctl.IOC_READ, 'E', uint32(0x20+ev), length, "EVIOCGBIT request failed")
 }
 
 // EVIOCGABS returns the ioctl request code for reading absolute-axis info
 // into [AbsInfo].
 func EVIOCGABS(abs AbsoluteCode) (uint32, error) {
-	return ior[AbsInfo]('E', uint32(0x40+abs), "EVIOCGABS request failed")
+	return ioctlwrap.IOR[AbsInfo]('E', uint32(0x40+abs), "EVIOCGABS request failed")
 }
 
 // EVIOCSABS returns the ioctl request code for writing absolute-axis info
 // from AbsInfo.
 func EVIOCSABS(abs AbsoluteCode) (uint32, error) {
-	return iow[AbsInfo]('E', uint32(0xc0+abs), "EVIOCSABS request failed")
+	return ioctlwrap.IOW[AbsInfo]('E', uint32(0xc0+abs), "EVIOCSABS request failed")
 }
 
 // EVIOCSFF returns the ioctl request code for uploading (or updating)
 // a force-feedback effect.
 func EVIOCSFF() (uint32, error) {
-	return iow[FFEffect]('E', 0x80, "EVIOCSFF request failed")
+	return ioctlwrap.IOW[FFEffect]('E', 0x80, "EVIOCSFF request failed")
 }
 
 // EVIOCRMFF returns the ioctl request code for erasing a previously
 // uploaded force-feedback effect.
 func EVIOCRMFF() (uint32, error) {
-	return iow[int32]('E', 0x81, "EVIOCRMFF request failed")
+	return ioctlwrap.IOW[int32]('E', 0x81, "EVIOCRMFF request failed")
 }
 
 // EVIOCGEFFECTS returns the ioctl request code for querying how many
 // force-feedback effects the device supports.
 func EVIOCGEFFECTS() (uint32, error) {
-	return ior[int32]('E', 0x84, "EVIOCGEFFECTS request failed")
+	return ioctlwrap.IOR[int32]('E', 0x84, "EVIOCGEFFECTS request failed")
 }
 
 // EVIOCGRAB returns the ioctl request code for grabbing or releasing an
 // input device. Passing a non-zero argument locks event delivery to the
 // calling process; zero releases it.
 func EVIOCGRAB() (uint32, error) {
-	return iow[int32]('E', 0x90, "EVIOCGRAB request failed")
+	return ioctlwrap.IOW[int32]('E', 0x90, "EVIOCGRAB request failed")
 }
 
 // EVIOCREVOKE returns the ioctl request code for revoking a grab on an
 // input device.
 func EVIOCREVOKE() (uint32, error) {
-	return iow[int32]('E', 0x91, "EVIOCREVOKE request failed")
+	return ioctlwrap.IOW[int32]('E', 0x91, "EVIOCREVOKE request failed")
 }
 
 // EVIOCGMASK returns the ioctl request code to retrieve the per-client
@@ -826,7 +828,7 @@ func EVIOCREVOKE() (uint32, error) {
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 func EVIOCGMASK() (uint32, error) {
-	return ior[Mask]('E', 0x92, "EVIOCGMASK request failed")
+	return ioctlwrap.IOR[Mask]('E', 0x92, "EVIOCGMASK request failed")
 }
 
 // EVIOCSMASK returns the ioctl request code to set the per-client
@@ -854,11 +856,11 @@ func EVIOCGMASK() (uint32, error) {
 //
 // [input.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h
 func EVIOCSMASK() (uint32, error) {
-	return iow[Mask]('E', 0x93, "EVIOCSMASK request failed")
+	return ioctlwrap.IOW[Mask]('E', 0x93, "EVIOCSMASK request failed")
 }
 
 // EVIOCSCLOCKID returns the ioctl request code which sets the clock
 // source used to timestamp input events on a Linux event device.
 func EVIOCSCLOCKID() (uint32, error) {
-	return iow[int32]('E', 0xa0, "EVIOCSCLOCKID request failed")
+	return ioctlwrap.IOW[int32]('E', 0xa0, "EVIOCSCLOCKID request failed")
 }

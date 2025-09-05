@@ -269,7 +269,7 @@ func IOC_DIR(nr uint32) uint32 {
 	return nr >> IOC_DIRSHIFT() & IOC_DIRMASK()
 }
 
-// IOC_TYPE extracts the type field from the given ioctl request number
+// IOC_TYPE extracts the type field from the given error ioctl request number
 // nr by shifting it right by [IOC_TYPESHIFT] and masking with
 // [IOC_TYPEMASK].
 func IOC_TYPE(nr uint32) uint32 {

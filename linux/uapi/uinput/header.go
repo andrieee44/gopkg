@@ -1,6 +1,7 @@
 package uinput
 
 import (
+	"github.com/andrieee44/gopkg/linux/internal/ioctlwrap"
 	"github.com/andrieee44/gopkg/linux/uapi/input"
 	"github.com/andrieee44/gopkg/linux/uapi/ioctl"
 )
@@ -22,7 +23,7 @@ type FFUpload struct {
 	Retval int32
 
 	// Effect contains the new input.FFEffect to be stored in the
-	// device's internal buffer.
+	// device's iowrap buffer.
 	Effect input.FFEffect
 
 	// Old contains the previous input.FFEffect that is being replaced
@@ -32,7 +33,7 @@ type FFUpload struct {
 
 // FFErase represents a force feedback erase request exchanged with the
 // kernel via the uinput interface. It is used when removing a force
-// feedback effect from a virtual input device's internal buffer. The
+// feedback effect from a virtual input device's iowrap buffer. The
 // kernel fills this structure when processing an erase request, allowing
 // the caller to approve or reject the removal.
 type FFErase struct {
@@ -78,7 +79,7 @@ type FFErase struct {
 //  4. Perform the effect upload, and place a return code back into
 //     the [FFUpload] struct.
 //  5. Issue a [UI_END_FF_UPLOAD] ioctl, also giving it the
-//     [FFUpload].Effect struct. This will complete execution
+//     [FFUpload] struct. This will complete execution
 //     of our upload_effect() handler.
 //
 // To implement erase_effect():
@@ -92,7 +93,7 @@ type FFErase struct {
 //  4. Perform the effect erasure, and place a return code back
 //     into the [FFErase] struct.
 //  5. Issue a [UI_END_FF_ERASE] ioctl, also giving it the
-//     [FFErase].Effect struct. This will complete execution
+//     [FFErase] struct. This will complete execution
 //     of our erase_effect() handler.
 //
 // [EV_UINPUT] is the new event type, used only by uinput.
@@ -113,7 +114,7 @@ type Setup struct {
 	Name [UINPUT_MAX_NAME_SIZE]byte
 
 	// FFEffectsMax specifies the maximum number of force feedback effects
-	// the device can store in its internal buffer. Set to zero if the
+	// the device can store in its iowrap buffer. Set to zero if the
 	// device does not support force feedback.
 	FFEffectsMax uint32
 }
@@ -149,7 +150,7 @@ type UserDev struct {
 	ID input.ID
 
 	// FFEffectsMax specifies the maximum number of force feedback effects
-	// the device can store in its internal buffer. Set to zero if the
+	// the device can store in its iowrap buffer. Set to zero if the
 	// device does not support force feedback.
 	FFEffectsMax uint32
 
@@ -193,13 +194,13 @@ const (
 // UI_DEV_CREATE is the ioctl request code to create a virtual input device.
 // It takes no arguments.
 func UI_DEV_CREATE() (uint32, error) {
-	return io(UINPUT_IOCTL_BASE, 1, "UI_DEV_CREATE request failed")
+	return ioctlwrap.IO(UINPUT_IOCTL_BASE, 1, "UI_DEV_CREATE request failed")
 }
 
 // UI_DEV_DESTROY is the ioctl request code to destroy a virtual input device.
 // It takes no arguments.
 func UI_DEV_DESTROY() (uint32, error) {
-	return io(UINPUT_IOCTL_BASE, 2, "UI_DEV_DESTROY request failed")
+	return ioctlwrap.IO(UINPUT_IOCTL_BASE, 2, "UI_DEV_DESTROY request failed")
 }
 
 // UI_DEV_SETUP is the ioctl request code to set up parameters for a virtual
@@ -232,11 +233,11 @@ func UI_DEV_DESTROY() (uint32, error) {
 // incorrect values, -ENOMEM if the kernel runs out of memory or -EFAULT if
 // the passed [Setup] object cannot be read/written.
 // If this call fails, partial data may have already been applied to the
-// internal device.
+// iowrap device.
 //
 // [uinput.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/uinput.h
 func UI_DEV_SETUP() (uint32, error) {
-	return iow[Setup](UINPUT_IOCTL_BASE, 3, "UI_DEV_SETUP request failed")
+	return ioctlwrap.IOW[Setup](UINPUT_IOCTL_BASE, 3, "UI_DEV_SETUP request failed")
 }
 
 // UI_ABS_SETUP is the ioctl request code to configure an absolute axis on a
@@ -269,104 +270,104 @@ func UI_DEV_SETUP() (uint32, error) {
 // incorrect values, -ENOMEM if the kernel runs out of memory or -EFAULT if
 // the passed [Setup] object cannot be read/written.
 // If this call fails, partial data may have already been applied to the
-// internal device.
+// iowrap device.
 //
 // [uinput.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/uinput.h
 func UI_ABS_SETUP() (uint32, error) {
-	return iow[AbsSetup](UINPUT_IOCTL_BASE, 4, "UI_ABS_SETUP request failed")
+	return ioctlwrap.IOW[AbsSetup](UINPUT_IOCTL_BASE, 4, "UI_ABS_SETUP request failed")
 }
 
 // UI_SET_EVBIT is the ioctl request code to enable an event type. It writes
 // an int.
 func UI_SET_EVBIT() (uint32, error) {
-	return iow[int](UINPUT_IOCTL_BASE, 100, "UI_SET_EVBIT request failed")
+	return ioctlwrap.IOW[int](UINPUT_IOCTL_BASE, 100, "UI_SET_EVBIT request failed")
 }
 
 // UI_SET_KEYBIT is the ioctl request code to enable a key code. It writes an
 // int.
 func UI_SET_KEYBIT() (uint32, error) {
-	return iow[int](UINPUT_IOCTL_BASE, 101, "UI_SET_KEYBIT request failed")
+	return ioctlwrap.IOW[int](UINPUT_IOCTL_BASE, 101, "UI_SET_KEYBIT request failed")
 }
 
 // UI_SET_RELBIT is the ioctl request code to enable a relative axis. It
 // writes an int32.
 func UI_SET_RELBIT() (uint32, error) {
-	return iow[int32](UINPUT_IOCTL_BASE, 102, "UI_SET_RELBIT request failed")
+	return ioctlwrap.IOW[int32](UINPUT_IOCTL_BASE, 102, "UI_SET_RELBIT request failed")
 }
 
 // UI_SET_ABSBIT is the ioctl request code to enable an absolute axis. It
 // writes an int32.
 func UI_SET_ABSBIT() (uint32, error) {
-	return iow[int32](UINPUT_IOCTL_BASE, 103, "UI_SET_ABSBIT request failed")
+	return ioctlwrap.IOW[int32](UINPUT_IOCTL_BASE, 103, "UI_SET_ABSBIT request failed")
 }
 
 // UI_SET_MSCBIT is the ioctl request code to enable a miscellaneous event.
 // It writes an int32.
 func UI_SET_MSCBIT() (uint32, error) {
-	return iow[int32](UINPUT_IOCTL_BASE, 104, "UI_SET_MSCBIT request failed")
+	return ioctlwrap.IOW[int32](UINPUT_IOCTL_BASE, 104, "UI_SET_MSCBIT request failed")
 }
 
 // UI_SET_LEDBIT is the ioctl request code to enable an LED event. It writes
 // an int32.
 func UI_SET_LEDBIT() (uint32, error) {
-	return iow[int32](UINPUT_IOCTL_BASE, 105, "UI_SET_LEDBIT request failed")
+	return ioctlwrap.IOW[int32](UINPUT_IOCTL_BASE, 105, "UI_SET_LEDBIT request failed")
 }
 
 // UI_SET_SNDBIT is the ioctl request code to enable a sound event. It writes
 // an int32.
 func UI_SET_SNDBIT() (uint32, error) {
-	return iow[int32](UINPUT_IOCTL_BASE, 106, "UI_SET_SNDBIT request failed")
+	return ioctlwrap.IOW[int32](UINPUT_IOCTL_BASE, 106, "UI_SET_SNDBIT request failed")
 }
 
 // UI_SET_FFBIT is the ioctl request code to enable a force-feedback effect.
 // It writes an int32.
 func UI_SET_FFBIT() (uint32, error) {
-	return iow[int32](UINPUT_IOCTL_BASE, 107, "UI_SET_FFBIT request failed")
+	return ioctlwrap.IOW[int32](UINPUT_IOCTL_BASE, 107, "UI_SET_FFBIT request failed")
 }
 
 // UI_SET_PHYS is the ioctl request code to set the physical path of the
 // device. It writes a string.
 func UI_SET_PHYS() (uint32, error) {
-	return iow[*byte](UINPUT_IOCTL_BASE, 108, "UI_SET_PHYS request failed")
+	return ioctlwrap.IOW[*byte](UINPUT_IOCTL_BASE, 108, "UI_SET_PHYS request failed")
 }
 
 // UI_SET_SWBIT is the ioctl request code to enable a switch event. It writes
 // an int32.
 func UI_SET_SWBIT() (uint32, error) {
-	return iow[int32](UINPUT_IOCTL_BASE, 109, "UI_SET_SWBIT request failed")
+	return ioctlwrap.IOW[int32](UINPUT_IOCTL_BASE, 109, "UI_SET_SWBIT request failed")
 }
 
 // UI_SET_PROPBIT is the ioctl request code to enable a device property. It
 // writes an int32.
 func UI_SET_PROPBIT() (uint32, error) {
-	return iow[int32](UINPUT_IOCTL_BASE, 110, "UI_SET_PROPBIT request failed")
+	return ioctlwrap.IOW[int32](UINPUT_IOCTL_BASE, 110, "UI_SET_PROPBIT request failed")
 }
 
 // UI_BEGIN_FF_UPLOAD is the ioctl request code to begin uploading a
 // force-feedback effect. It reads/writes an FFUpload struct.
 func UI_BEGIN_FF_UPLOAD() (uint32, error) {
-	return iowr[FFUpload](UINPUT_IOCTL_BASE, 200,
+	return ioctlwrap.IOWR[FFUpload](UINPUT_IOCTL_BASE, 200,
 		"UI_BEGIN_FF_UPLOAD request failed")
 }
 
 // UI_END_FF_UPLOAD is the ioctl request code to end uploading a
 // force-feedback effect. It writes an FFUpload struct.
 func UI_END_FF_UPLOAD() (uint32, error) {
-	return iow[FFUpload](UINPUT_IOCTL_BASE, 201,
+	return ioctlwrap.IOW[FFUpload](UINPUT_IOCTL_BASE, 201,
 		"UI_END_FF_UPLOAD request failed")
 }
 
 // UI_BEGIN_FF_ERASE is the ioctl request code to begin erasing a
 // force-feedback effect. It reads/writes an FFErase struct.
 func UI_BEGIN_FF_ERASE() (uint32, error) {
-	return iowr[FFErase](UINPUT_IOCTL_BASE, 202,
+	return ioctlwrap.IOWR[FFErase](UINPUT_IOCTL_BASE, 202,
 		"UI_BEGIN_FF_ERASE request failed")
 }
 
 // UI_END_FF_ERASE is the ioctl request code to end erasing a force-feedback
 // effect. It writes an FFErase struct.
 func UI_END_FF_ERASE() (uint32, error) {
-	return iow[FFErase](UINPUT_IOCTL_BASE, 203,
+	return ioctlwrap.IOW[FFErase](UINPUT_IOCTL_BASE, 203,
 		"UI_END_FF_ERASE request failed")
 }
 
@@ -383,7 +384,13 @@ func UI_END_FF_ERASE() (uint32, error) {
 //
 // [uinput.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/uinput.h
 func UI_GET_SYSNAME(length uint32) (uint32, error) {
-	return ioc(ioctl.IOC_READ, UINPUT_IOCTL_BASE, 44, length, "UI_GET_SYSNAME request failed")
+	return ioctlwrap.IOC(
+		ioctl.IOC_READ,
+		UINPUT_IOCTL_BASE,
+		44,
+		length,
+		"UI_GET_SYSNAME request failed",
+	)
 }
 
 // UI_GET_VERSION is the ioctl request code to read the uinput driver
@@ -399,5 +406,5 @@ func UI_GET_SYSNAME(length uint32) (uint32, error) {
 //
 // [uinput.h]: https://github.com/torvalds/linux/blob/master/include/uapi/linux/uinput.h
 func UI_GET_VERSION() (uint32, error) {
-	return ior[uint32](UINPUT_IOCTL_BASE, 45, "UI_GET_VERSION request failed")
+	return ioctlwrap.IOR[uint32](UINPUT_IOCTL_BASE, 45, "UI_GET_VERSION request failed")
 }
