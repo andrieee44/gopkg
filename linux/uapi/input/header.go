@@ -406,7 +406,7 @@ type FFEffect struct {
 	Type uint16
 
 	// ID is the effect identifier. Set to -1 when creating a new effect.
-	ID int16
+	ID BusCode
 
 	// Direction is the force direction encoded in [0x0000..0xFFFF].
 	Direction uint16
