@@ -23,6 +23,7 @@ disable = [
   "exhaustive",
   "exhaustruct",
   "forbidigo",
+  "funlen",
   "gochecknoglobals",
   "goconst",
   "grouper",
