@@ -9,6 +9,34 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+type overflowTable[T constraints.Integer] struct {
+	bits  T
+	value T
+	exp   bool
+}
+
+func overflowTest[T constraints.Integer](
+	t *testing.T,
+	fn func(T, T) bool,
+	tables []overflowTable[T],
+) {
+	t.Helper()
+
+	var test overflowTable[T]
+
+	for _, test = range tables {
+		if test.exp != fn(test.bits, test.value) {
+			t.Errorf(
+				"got: %t, exp: %t: bits = %d, value = %d",
+				!test.exp,
+				test.exp,
+				test.bits,
+				test.value,
+			)
+		}
+	}
+}
+
 func bufStr(buf []byte) string {
 	var (
 		builder strings.Builder
@@ -31,9 +59,9 @@ func bufStr(buf []byte) string {
 }
 
 func expectPanic(t *testing.T, format string, args ...any) {
-	var r any
-
 	t.Helper()
+
+	var r any
 
 	r = recover()
 	if r == nil {
@@ -196,21 +224,12 @@ func FuzzBytes(f *testing.F) {
 }
 
 func TestOverflowsSigned(t *testing.T) {
-	type table[T constraints.Signed] struct {
-		bits  T
-		value T
-		exp   bool
-	}
-
 	t.Parallel()
 
 	t.Run("int8", func(t *testing.T) {
-		var (
-			tests []table[int8]
-			test  table[int8]
-		)
+		t.Parallel()
 
-		tests = []table[int8]{
+		overflowTest(t, bitops.OverflowsSigned, []overflowTable[int8]{
 			// 2-bit signed range [-2, 1]
 			{2, -3, true},  // below min
 			{2, -2, false}, // min
@@ -220,28 +239,13 @@ func TestOverflowsSigned(t *testing.T) {
 			// 8-bit signed range [-128, 127]
 			{8, -128, false}, // min
 			{8, 127, false},  // max
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsSigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 
 	t.Run("int16", func(t *testing.T) {
-		var (
-			tests []table[int16]
-			test  table[int16]
-		)
+		t.Parallel()
 
-		tests = []table[int16]{
+		overflowTest(t, bitops.OverflowsSigned, []overflowTable[int16]{
 			// 8-bit signed range [-128, 127]
 			{8, -129, true},  // below min
 			{8, -128, false}, // min
@@ -251,96 +255,39 @@ func TestOverflowsSigned(t *testing.T) {
 			// 16-bit signed range [-32768, 32767]
 			{16, -32768, false}, // min
 			{16, 32767, false},  // max
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsSigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 
 	t.Run("int32", func(t *testing.T) {
-		var (
-			tests []table[int32]
-			test  table[int32]
-		)
+		t.Parallel()
 
-		tests = []table[int32]{
+		overflowTest(t, bitops.OverflowsSigned, []overflowTable[int32]{
 			// 32-bit signed range [-2147483648, 2147483647]
 			{32, -2147483648, false}, // min
 			{32, 2147483647, false},  // max
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsSigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 
 	t.Run("int64", func(t *testing.T) {
-		var (
-			tests []table[int64]
-			test  table[int64]
-		)
+		t.Parallel()
 
-		tests = []table[int64]{
+		overflowTest(t, bitops.OverflowsSigned, []overflowTable[int64]{
 			// 64-bit signed range [-9223372036854775808, 9223372036854775807]
 			{64, -9223372036854775808, false}, // min
 			{64, 9223372036854775807, false},  // max
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsSigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 
 	t.Run("int", func(t *testing.T) {
-		var (
-			tests []table[int]
-			test  table[int]
-		)
+		t.Parallel()
 
-		tests = []table[int]{
+		overflowTest(t, bitops.OverflowsSigned, []overflowTable[int]{
 			// 8-bit signed range [-128, 127]
 			{8, -129, true},  // below min
 			{8, -128, false}, // min
 			{8, 127, false},  // max
 			{8, 128, true},   // above max
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsSigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 }
 
@@ -373,21 +320,12 @@ func FuzzOverflowsSigned(f *testing.F) {
 }
 
 func TestOverflowsUnsigned(t *testing.T) {
-	type table[T constraints.Unsigned] struct {
-		bits  T
-		value T
-		exp   bool
-	}
-
 	t.Parallel()
 
 	t.Run("uint8", func(t *testing.T) {
-		var (
-			tests []table[uint8]
-			test  table[uint8]
-		)
+		t.Parallel()
 
-		tests = []table[uint8]{
+		overflowTest(t, bitops.OverflowsUnsigned, []overflowTable[uint8]{
 			// 1-bit unsigned range [0, 1]
 			{1, 0, false},
 			{1, 1, false},
@@ -396,121 +334,49 @@ func TestOverflowsUnsigned(t *testing.T) {
 			// 8-bit unsigned range [0, 255]
 			{8, 0, false},
 			{8, 255, false},
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsUnsigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 
 	t.Run("uint16", func(t *testing.T) {
-		var (
-			tests []table[uint16]
-			test  table[uint16]
-		)
+		t.Parallel()
 
-		tests = []table[uint16]{
+		overflowTest(t, bitops.OverflowsUnsigned, []overflowTable[uint16]{
 			// 8-bit unsigned range [0, 255]
 			{8, 256, true},
 			{8, 255, false},
 
 			// 16-bit unsigned range [0, 65535]
 			{16, 65535, false},
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsUnsigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 
 	t.Run("uint32", func(t *testing.T) {
-		var (
-			tests []table[uint32]
-			test  table[uint32]
-		)
+		t.Parallel()
 
-		tests = []table[uint32]{
+		overflowTest(t, bitops.OverflowsUnsigned, []overflowTable[uint32]{
 			// 32-bit unsigned range [0, 4294967295]
 			{32, 4294967295, false},
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsUnsigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 
 	t.Run("uint64", func(t *testing.T) {
-		var (
-			tests []table[uint64]
-			test  table[uint64]
-		)
+		t.Parallel()
 
-		tests = []table[uint64]{
+		overflowTest(t, bitops.OverflowsUnsigned, []overflowTable[uint64]{
 			// 64-bit unsigned range [0, 18446744073709551615]
 			{64, 0, false},
 			{64, 18446744073709551615, false},
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsUnsigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 
 	t.Run("uint", func(t *testing.T) {
-		var (
-			tests []table[uint]
-			test  table[uint]
-		)
+		t.Parallel()
 
-		tests = []table[uint]{
+		overflowTest(t, bitops.OverflowsUnsigned, []overflowTable[uint64]{
 			// 8-bit unsigned range [0, 255]
 			{8, 255, false},
 			{8, 256, true},
-		}
-
-		for _, test = range tests {
-			if test.exp != bitops.OverflowsUnsigned(test.bits, test.value) {
-				t.Errorf(
-					"got: %t, exp: %t: bits = %d, value = %d",
-					!test.exp,
-					test.exp,
-					test.bits,
-					test.value,
-				)
-			}
-		}
+		})
 	})
 }
 

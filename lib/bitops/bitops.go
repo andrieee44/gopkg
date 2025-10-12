@@ -16,7 +16,13 @@ func Test[T constraints.Integer](buf []byte, pos T) bool {
 	}
 
 	if int(pos/8) >= len(buf) {
-		panic(fmt.Sprintf("bitops.Test: pos: %d is out of bounds; buf holds %d bits", pos, len(buf)*8))
+		panic(
+			fmt.Sprintf(
+				"bitops.Test: pos: %d is out of bounds; buf holds %d bits",
+				pos,
+				len(buf)*8,
+			),
+		)
 	}
 
 	return buf[pos/8]&(1<<(pos%8)) != 0
@@ -46,17 +52,27 @@ func OverflowsSigned[T constraints.Signed](bits, value T) bool {
 	var maxN, minN int64
 
 	if bits <= 1 {
-		panic(fmt.Sprintf("bitops.OverflowsSigned: bits: %d is invalid; must be > 1 to allow for sign bit", bits))
+		panic(
+			fmt.Sprintf(
+				"bitops.OverflowsSigned: bits: %d is invalid; must be > 1 to allow for sign bit",
+				bits,
+			),
+		)
 	}
 
 	if bits > 64 {
-		panic(fmt.Sprintf("bitops.OverflowsSigned: bits: %d is invalid; must be <= 64; values wider than int64 are not supported", bits))
+		panic(
+			fmt.Sprintf(
+				"bitops.OverflowsSigned: bits: %d is invalid; must be <= 64; values wider than int64 are not supported",
+				bits,
+			),
+		)
 	}
 
 	maxN = int64((uint64(1) << (bits - 1)) - 1)
 	minN = -int64(1 << (bits - 1))
 
-	return !(int64(value) <= maxN && int64(value) >= minN)
+	return int64(value) > maxN || int64(value) < minN
 }
 
 // OverflowsUnsigned reports whether value cannot be represented
@@ -73,8 +89,13 @@ func OverflowsUnsigned[T constraints.Unsigned](bits, value T) bool {
 	}
 
 	if bits > 64 {
-		panic(fmt.Sprintf("bitops.OverflowsUnsigned: bits: %d is invalid; must be <= 64; values wider than uint64 are not supported", bits))
+		panic(
+			fmt.Sprintf(
+				"bitops.OverflowsUnsigned: bits: %d is invalid; must be <= 64; values wider than uint64 are not supported",
+				bits,
+			),
+		)
 	}
 
-	return !(uint64(value) <= ^uint64(0)>>(64-bits))
+	return uint64(value) > ^uint64(0)>>(64-bits)
 }
