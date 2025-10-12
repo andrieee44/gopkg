@@ -25,15 +25,17 @@ func overflowTest[T constraints.Integer](
 	var test overflowTable[T]
 
 	for _, test = range tables {
-		if test.exp != fn(test.bits, test.value) {
-			t.Errorf(
-				"got: %t, exp: %t: bits = %d, value = %d",
-				!test.exp,
-				test.exp,
-				test.bits,
-				test.value,
-			)
+		if test.exp == fn(test.bits, test.value) {
+			continue
 		}
+
+		t.Errorf(
+			"got: %t, exp: %t: bits = %d, value = %d",
+			!test.exp,
+			test.exp,
+			test.bits,
+			test.value,
+		)
 	}
 }
 
@@ -111,15 +113,17 @@ func TestTest(t *testing.T) {
 	}
 
 	for _, test = range tables {
-		if test.exp != bitops.Test(test.buf, test.pos) {
-			t.Errorf(
-				"got: %t, exp: %t: buf = %s, pos = %d",
-				!test.exp,
-				test.exp,
-				bufStr(test.buf),
-				test.pos,
-			)
+		if test.exp == bitops.Test(test.buf, test.pos) {
+			continue
 		}
+
+		t.Errorf(
+			"got: %t, exp: %t: buf = %s, pos = %d",
+			!test.exp,
+			test.exp,
+			bufStr(test.buf),
+			test.pos,
+		)
 	}
 }
 
@@ -173,14 +177,16 @@ func TestBytes(t *testing.T) {
 	}
 
 	for _, test = range tables {
-		if len(bitops.Bytes(test.bits)) != test.size {
-			t.Errorf(
-				"got: %d, exp: %d: bits = %d",
-				len(bitops.Bytes(test.bits)),
-				test.size,
-				test.bits,
-			)
+		if len(bitops.Bytes(test.bits)) == test.size {
+			continue
 		}
+
+		t.Errorf(
+			"got: %d, exp: %d: bits = %d",
+			len(bitops.Bytes(test.bits)),
+			test.size,
+			test.bits,
+		)
 	}
 }
 
@@ -212,14 +218,16 @@ func FuzzBytes(f *testing.F) {
 		}
 
 		buf = bitops.Bytes(bits)
-		if len(buf) != (bits+7)/8 {
-			t.Errorf(
-				"got: %d, exp: %d: bits = %d",
-				len(buf),
-				(bits+7)/8,
-				bits,
-			)
+		if len(buf) == (bits+7)/8 {
+			return
 		}
+
+		t.Errorf(
+			"got: %d, exp: %d: bits = %d",
+			len(buf),
+			(bits+7)/8,
+			bits,
+		)
 	})
 }
 
