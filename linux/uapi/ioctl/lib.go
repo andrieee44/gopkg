@@ -1,3 +1,5 @@
+//go:build linux
+
 package ioctl
 
 import (
@@ -5,12 +7,17 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/andrieee44/gopkg/lib/xerr"
 	"golang.org/x/sys/unix"
 )
 
-// GetAny performs an ioctl call on fd using a request code from reqFn,
-// writing the result into arg. Returns arg on success, or the zero value of T
-// and an error if obtaining the request code or the ioctl itself fails.
+// GetAny performs an ioctl call on the given file descriptor using a
+// request code from reqFn.
+//
+// It writes the result into arg and returns the dereferenced value on
+// success. If obtaining the request code fails, or if the ioctl syscall
+// returns an error, it returns the zero value of T and a wrapped error.
+//
 // Suitable for wrapping ioctl calls for any data type without repeating
 // boilerplate syscall handling.
 func GetAny[T any](
@@ -26,7 +33,7 @@ func GetAny[T any](
 
 	req, err = reqFn()
 	if err != nil {
-		return *new(T), fmt.Errorf("failed to get request code: %w", err)
+		return *new(T), fmt.Errorf("ioctl.GetAny: failed to get request code: %w", err)
 	}
 
 	_, _, errno = unix.Syscall(
@@ -36,31 +43,33 @@ func GetAny[T any](
 		uintptr(unsafe.Pointer(arg)),
 	)
 	if errno != 0 {
-		return *new(T), fmt.Errorf("failed ioctl syscall: %w", errno)
+		return *new(T), fmt.Errorf("ioctl.GetAny: failed ioctl syscall: %w", errno)
 	}
 
 	return *arg, nil
 }
 
-// SetAny performs an ioctl call on fd using a request code from reqFn,
-// sending arg to the kernel and discarding any returned value.
-// Returns an error if obtaining the request code or the ioctl itself fails.
-// Useful for ioctl operations that write data without reading a result back.
+// SetAny performs an ioctl call on the given file descriptor using a
+// request code from reqFn, sending arg to the kernel.
+//
+// It discards any returned value and returns an error if obtaining the
+// request code or performing the ioctl fails.
+//
+// Suitable for ioctl operations that write data without reading a result.
 func SetAny[T any](fd uintptr, reqFn func() (uint32, error), arg *T) error {
 	var err error
 
 	_, err = GetAny(fd, reqFn, arg)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return xerr.WrapIf("ioctl.SetAny", err)
 }
 
-// GetStr performs an ioctl call on fd using a request code from reqFn,
-// reading up to bufSize bytes from the kernel into a string result.
-// Returns the string and a nil error on success.
-// An error is returned if obtaining the request code or the ioctl call fails.
+// GetStr performs an ioctl call on the given file descriptor using a
+// request code from reqFn, reading up to bufSize bytes into a string.
+//
+// It returns the string and a nil error on success. If obtaining the
+// request code or performing the ioctl fails, it returns an empty string
+// and a wrapped error.
 func GetStr(
 	fd uintptr,
 	reqFn func(length uint32) (uint32, error),
@@ -77,29 +86,36 @@ func GetStr(
 		return reqFn(bufSize)
 	}, &buf[0])
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("ioctl.GetStr: %w", err)
 	}
 
 	return unix.ByteSliceToString(buf), nil
 }
 
-// Empty performs an ioctl on fd using a request code from reqFn with no
-// argument. Returns an error if obtaining the request code or the ioctl
-// itself fails.
+// Empty performs an ioctl call on the given file descriptor using a
+// request code from reqFn, with no argument.
+//
+// It returns an error if obtaining the request code or performing the
+// ioctl fails.
 func Empty(fd uintptr, reqFn func() (uint32, error)) error {
-	return SetAny(fd, reqFn, new(struct{}))
+	return xerr.WrapIf("ioctl.Empty", SetAny(fd, reqFn, new(struct{})))
 }
 
-func ioc[T any](dir, typ, nr uint32) (uint32, error) {
+func ioc[T any](dir, typ, nr uint32, fnName string) (uint32, error) {
 	var (
-		size uint32
-		err  error
+		size, req uint32
+		err       error
 	)
 
 	size, err = IOC_TYPECHECK[T]()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("%s: %w", fnName, err)
 	}
 
-	return IOC(dir, typ, nr, size)
+	req, err = IOC(dir, typ, nr, size)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", fnName, err)
+	}
+
+	return req, nil
 }
