@@ -135,3 +135,44 @@ func WrapIf(prefix string, err error) error {
 
 	return nil
 }
+
+// WrapIf1 executes the provided function and returns its result.
+//
+// If the function signals failure, the zero value of T is returned
+// alongside a formatted diagnostic that includes the given prefix.
+// This helper reduces repetitive conditional handling in workflows
+// that produce a single result.
+func WrapIf1[T any](prefix string, fn func() (T, error)) (T, error) {
+	var (
+		result, zero T
+		err          error
+	)
+
+	result, err = fn()
+	if err != nil {
+		return zero, fmt.Errorf("%s: %w", prefix, err)
+	}
+
+	return result, nil
+}
+
+// WrapIf2 executes the provided function and returns its two results.
+//
+// If the function signals failure, the zero values of T1 and T2 are
+// returned alongside a formatted diagnostic that includes the given
+// prefix. This helper reduces repetitive conditional handling in
+// workflows that produce two results.
+func WrapIf2[T1, T2 any](prefix string, fn func() (T1, T2, error)) (T1, T2, error) {
+	var (
+		result1, zero1 T1
+		result2, zero2 T2
+		err            error
+	)
+
+	result1, result2, err = fn()
+	if err != nil {
+		return zero1, zero2, fmt.Errorf("%s: %w", prefix, err)
+	}
+
+	return result1, result2, nil
+}
