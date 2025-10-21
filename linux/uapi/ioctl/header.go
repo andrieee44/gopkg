@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"github.com/andrieee44/gopkg/lib/bitops"
+	"github.com/andrieee44/gopkg/lib/xerr"
 )
 
 const (
@@ -254,7 +255,9 @@ func IO(typ, nr uint32) (uint32, error) {
 //
 // The size is derived from the generic type parameter T.
 func IOR[T any](typ, nr uint32) (uint32, error) {
-	return ioc[T](IOC_READ, typ, nr, "ioctl.IOR")
+	return xerr.WrapIf1("ioctl.IOR", func() (uint32, error) {
+		return ioc[T](IOC_READ, typ, nr)
+	})
 }
 
 // IOW returns an ioctl request code for a command that writes data to the
@@ -262,7 +265,9 @@ func IOR[T any](typ, nr uint32) (uint32, error) {
 //
 // The size is derived from the generic type parameter T.
 func IOW[T any](typ, nr uint32) (uint32, error) {
-	return ioc[T](IOC_WRITE, typ, nr, "ioctl.IOW")
+	return xerr.WrapIf1("ioctl.IOW", func() (uint32, error) {
+		return ioc[T](IOC_WRITE, typ, nr)
+	})
 }
 
 // IOWR returns an ioctl request code for a command that both reads and
@@ -270,7 +275,9 @@ func IOW[T any](typ, nr uint32) (uint32, error) {
 //
 // The size is derived from the generic type parameter T.
 func IOWR[T any](typ, nr uint32) (uint32, error) {
-	return ioc[T](IOC_READ|IOC_WRITE, typ, nr, "ioctl.IOWR")
+	return xerr.WrapIf1("ioctl.IOWR", func() (uint32, error) {
+		return ioc[T](IOC_READ|IOC_WRITE, typ, nr)
+	})
 }
 
 // IOC_DIR extracts the direction field from an ioctl request code.

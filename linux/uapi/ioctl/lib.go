@@ -57,11 +57,13 @@ func GetAny[T any](
 //
 // Suitable for ioctl operations that write data without reading a result.
 func SetAny[T any](fd uintptr, reqFn func() (uint32, error), arg *T) error {
-	var err error
+	return xerr.WrapIf0("ioctl.SetAny", func() error {
+		var err error
 
-	_, err = GetAny(fd, reqFn, arg)
+		_, err = GetAny(fd, reqFn, arg)
 
-	return xerr.WrapIf("ioctl.SetAny", err)
+		return err
+	})
 }
 
 // GetStr performs an ioctl call on the given file descriptor using a
@@ -98,10 +100,12 @@ func GetStr(
 // It returns an error if obtaining the request code or performing the
 // ioctl fails.
 func Empty(fd uintptr, reqFn func() (uint32, error)) error {
-	return xerr.WrapIf("ioctl.Empty", SetAny(fd, reqFn, new(struct{})))
+	return xerr.WrapIf0("ioctl.Empty", func() error {
+		return SetAny(fd, reqFn, new(struct{}))
+	})
 }
 
-func ioc[T any](dir, typ, nr uint32, fnName string) (uint32, error) {
+func ioc[T any](dir, typ, nr uint32) (uint32, error) {
 	var (
 		size, req uint32
 		err       error
@@ -109,12 +113,12 @@ func ioc[T any](dir, typ, nr uint32, fnName string) (uint32, error) {
 
 	size, err = IOC_TYPECHECK[T]()
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", fnName, err)
+		return 0, err
 	}
 
 	req, err = IOC(dir, typ, nr, size)
 	if err != nil {
-		return 0, fmt.Errorf("%s: %w", fnName, err)
+		return 0, err
 	}
 
 	return req, nil
