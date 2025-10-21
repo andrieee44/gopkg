@@ -119,21 +119,27 @@ func PanicIf(err error) {
 	}
 }
 
-// WrapIf executes the provided function and conditionally wraps its failure.
+// WrapIf conditionally wraps a non-nil error with the given prefix.
 //
-// If the function signals failure, the result is annotated with the given
-// prefix using [fmt.Errorf], preserving compatibility with [errors.Is] and
-// [errors.As]. This helper reduces boilerplate in workflows that wrap
-// failures for diagnostics without cluttering control flow.
-func WrapIf(prefix string, fn func() error) error {
-	var err error
-
-	err = fn()
+// This helper reduces boilerplate when annotating failures for diagnostics.
+// It preserves compatibility with [errors.Is] and [errors.As] by using
+// [fmt.Errorf] with %w wrapping.
+func WrapIf(prefix string, err error) error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", prefix, err)
 	}
 
 	return nil
+}
+
+// WrapIf0 executes the provided function and conditionally wraps its failure.
+//
+// If the function signals failure, the result is annotated with the given
+// prefix using [fmt.Errorf], preserving compatibility with [errors.Is] and
+// [errors.As]. This helper reduces boilerplate in workflows that wrap
+// failures for diagnostics without cluttering control flow.
+func WrapIf0(prefix string, fn func() error) error {
+	return WrapIf(prefix, fn())
 }
 
 // WrapIf1 executes the provided function and returns its result.
