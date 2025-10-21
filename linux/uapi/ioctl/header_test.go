@@ -13,7 +13,7 @@ type iocTable struct {
 	dir, typ, nr, size uint32
 }
 
-func init() {
+func setup() {
 	ioctl.SetIOC_SIZEBITS(ioctlcgo.IOC_SIZEBITS)
 	ioctl.SetIOC_DIRBITS(ioctlcgo.IOC_DIRBITS)
 	ioctl.SetIOC_NONE(ioctlcgo.IOC_NONE)
@@ -33,6 +33,7 @@ func TestVariables(t *testing.T) {
 	)
 
 	t.Parallel()
+	setup()
 
 	tests = []table{
 		{"IOC_NRBITS", ioctl.IOC_NRBITS, ioctlcgo.IOC_NRBITS},
@@ -54,7 +55,7 @@ func TestVariables(t *testing.T) {
 		{"IOC_OUT", ioctl.IOC_OUT(), ioctlcgo.IOC_OUT},
 		{"IOC_INOUT", ioctl.IOC_INOUT(), ioctlcgo.IOC_INOUT},
 		{"IOCSIZE_MASK", ioctl.IOCSIZE_MASK(), ioctlcgo.IOCSIZE_MASK},
-		{"IOCSIZE_SHIFT", ioctl.IOCSIZE_SHIFT(), ioctlcgo.IOCSIZE_SHIFT},
+		{"IOCSIZE_SHIFT", ioctl.IOCSIZE_SHIFT, ioctlcgo.IOCSIZE_SHIFT},
 	}
 
 	for _, test = range tests {
@@ -75,6 +76,7 @@ func TestIOC(t *testing.T) {
 	)
 
 	t.Parallel()
+	setup()
 
 	tests = []iocTable{
 		{dir: 0, typ: 0, nr: 0, size: 0},
