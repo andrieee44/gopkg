@@ -5,8 +5,8 @@ package ioctl_test
 import (
 	"testing"
 
+	"github.com/andrieee44/gopkg/linux/uapi/internal/ioctlcgo"
 	"github.com/andrieee44/gopkg/linux/uapi/ioctl"
-	ioctlcgo "github.com/andrieee44/gopkg/linux/uapi/ioctl/internal/ioctl_test_cgo"
 )
 
 type iocTable struct {

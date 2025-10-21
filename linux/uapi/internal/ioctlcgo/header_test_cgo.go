@@ -9,7 +9,7 @@
 //
 // All values are declared as Go constants for compatibility with static
 // analysis and test assertions.
-package ioctl_test_cgo
+package ioctlcgo
 
 /*
 #include <linux/ioctl.h>
