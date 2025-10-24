@@ -268,7 +268,9 @@ func IOC(dir, typ, nr, size uint32) (uint32, error) {
 //
 // It uses [IOC_NONE] as the direction and sets the size to zero.
 func IO(typ, nr uint32) (uint32, error) {
-	return IOC(IOC_NONE, typ, nr, 0)
+	return xerr.WrapIf1("ioctl.IO", func() (uint32, error) {
+		return IOC(IOC_NONE, typ, nr, 0)
+	})
 }
 
 // IOR returns an ioctl request code for a command that reads data from
@@ -364,7 +366,7 @@ func IOC_INOUT() uint32 {
 // code.
 //
 // The caller must be aware that the size field width may vary across
-// platforms. This function reflects the current runtime state of
+// platforms. This function reflects the current runtime state of})
 // [IOC_SIZEBITS] via [IOC_SIZEMASK].
 func IOCSIZE_MASK() uint32 {
 	return IOC_SIZEMASK() << IOC_SIZESHIFT
