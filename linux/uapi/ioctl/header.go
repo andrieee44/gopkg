@@ -167,9 +167,8 @@ func IOC_DIRSHIFT() uint32 {
 
 // IOC_TYPECHECK reports the size in bytes of type T as a uint32.
 //
-// It returns [ErrSizeOverflow] if the size exceeds [math.MaxUint32],
-// or [ErrBitOverflow] if the size cannot be encoded within
-// [IOC_SIZEBITS] bits.
+// It returns an error if the size exceeds [math.MaxUint32] or cannot be
+// encoded within [IOC_SIZEBITS] bits.
 func IOC_TYPECHECK[T any]() (uint32, error) {
 	var (
 		dataType T
@@ -194,21 +193,20 @@ func IOC_TYPECHECK[T any]() (uint32, error) {
 	return uint32(size), nil
 }
 
-// IOC encodes the provided dir, typ, nr, and size values into a single
-// 32-bit ioctl request code.
+// IOC encodes the given dir, typ, nr, and size values into a 32-bit ioctl
+// request code.
 //
-// It first validates that the combined bit widths defined by
-// [IOC_DIRBITS], [IOC_TYPEBITS], [IOC_NRBITS], and [IOC_SIZEBITS] do not
-// exceed 32, and that each value fits within its allocated field. If the
-// total exceeds 32 bits, it returns [ErrRequestTooBig]. If a value is too
-// large for its field, it returns [ErrBitOverflow] with details.
+// It first validates that the combined bit widths defined by [IOC_DIRBITS],
+// [IOC_TYPEBITS], [IOC_NRBITS], and [IOC_SIZEBITS] do not exceed 32 bits.
+//
+// An error is returned if the total bit width exceeds 32, or if any value
+// does not fit within its allocated field.
 //
 // When validation passes, the request code is assembled by shifting each
-// field into its position using [IOC_DIRSHIFT], [IOC_TYPESHIFT],
-// [IOC_NRSHIFT], and [IOC_SIZESHIFT]. The bit width settings may be
-// changed at runtime via their respective setter functions such as
-// [SetIOC_SIZEBITS] and [SetIOC_DIRBITS], which will affect both
-// validation and encoding.
+// field into position using [IOC_DIRSHIFT], [IOC_TYPESHIFT], [IOC_NRSHIFT],
+// and [IOC_SIZESHIFT]. Bit width settings may be changed at runtime via
+// setter functions like [SetIOC_SIZEBITS] and [SetIOC_DIRBITS], which
+// affect both validation and encoding.
 func IOC(dir, typ, nr, size uint32) (uint32, error) {
 	type argCheck struct {
 		name     string
